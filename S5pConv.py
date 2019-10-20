@@ -92,6 +92,7 @@ class FileDrop(wx.FileDropTarget):
         self.window.text21.SetLabel(files[len(files) - 1])
 
         return 0
+        
 
 
 
