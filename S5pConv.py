@@ -88,13 +88,26 @@ class FileDrop(wx.FileDropTarget):
         self.window = window
 
     def OnDropFiles(self, x, y, files):
-        if 
-        self.window.text21.SetLabel(files[len(files) - 1])
+        infile = files[len(files) - 1]
+        if os.path.splitext(infile)[1] == '.s5p':
+            self.window.infile = infile
+            self.window.text21.SetLabel(infile)
+            self.window.text22.SetLabel(os.path.splitext(infile)[0] + '.vpr')
+
 
         return 0
 
+class SelectFiles():
+    def __init__(self, window, infile):
+        self.window = window
 
+    def OnSelectFiles(self, window, infile):
+        ope = {0: ".s5p", 1: ".vpr"}
+        first_path = os.path.splitext(infile)[0] + ope[0]
+        dialog = wx.FileDialog(ope[0], u'ファイルを選択してください', first_path)  #atode
+        dialog.ShowModal()
 
+        return 0
 
 
 class MainFrame(wx.Frame):
@@ -107,6 +120,7 @@ class MainFrame(wx.Frame):
         font_j = wx.Font(12, wx.DEFAULT, wx.NORMAL, wx.NORMAL, False, "メイリオ")
 
         infile = ''
+        out_vpr = ''
 
         self.SetDropTarget(FileDrop(self))
 
@@ -130,12 +144,14 @@ class MainFrame(wx.Frame):
         box2 = wx.BoxSizer(wx.VERTICAL)
 
         self.text21 = wx.TextCtrl(panel2, wx.ID_ANY, infile)
+        self.btn21 = wx.Button(panel2, wx.ID_ANY, "…", size=(30, -1))
+        self.Bind(wx.EVT_BUTTON, SelectFiles(self, infile), self.btn21)
 
         grid21 = wx.FlexGridSizer(rows=6, cols=2, gap=(0, 0))
         grid21.Add(wx.StaticText(panel2, wx.ID_ANY, "    変換元ファイル"), wx.ID_ANY, wx.EXPAND)
         grid21.Add(wx.StaticText(panel2, wx.ID_ANY, ""))
         grid21.Add(self.text21, wx.ID_ANY, wx.EXPAND)
-        grid21.Add(wx.Button(panel2, wx.ID_ANY, "…", size=(30, -1)), wx.ID_ANY, wx.ALIGN_RIGHT)
+        grid21.Add(self.btn21, wx.ID_ANY, wx.ALIGN_RIGHT)
         grid21.Add(wx.StaticText(panel2, wx.ID_ANY, ""), wx.ID_ANY, wx.EXPAND)
         grid21.Add(wx.StaticText(panel2, wx.ID_ANY, ""))
         grid21.AddGrowableCol(0)
@@ -185,9 +201,6 @@ class MainFrame(wx.Frame):
 
         panel.SetSizer(hbox)
 
-    def OnFileSelect():
-        pass
-
 
 class SetFrame(wx.Frame):
     def __init__(self):
@@ -210,4 +223,5 @@ if __name__ == "__main__":
     app = wx.App()
     MainFrame().Show()
     app.MainLoop()
+
 
