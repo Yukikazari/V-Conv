@@ -8,57 +8,56 @@ import wx
 #https://github.com/Yukikazari/V-Conv.git
 
 class VprConv():
-    def __init__(self, infile, outfile):
-        self.infile = infile
-        self.outfile = outfile
+    def __init__(self, window):
+        self.infile = window.infile
+        self.outfile = window.outvpr
+        self.s5pf = window.s5pf
+        self.s5pj = window.s5pj
         self.Conv()
 
     def Conv(self):
-
-
-
-
         vprj = {"title": "null", "masterTrack": {"samplingRate": 44100, "tempo": {"global": {"isEnabled": False, "value": 12000}, "events": []}, "timeSig": {"events": []}, "volume": {"events": [{"pos": 0, "value": 0}]}}, "voices": [{"compID": "AKR", "name": "Mishima_Furikake"}], "tracks": []}
 
         #トラックテンプレート
         t_temp = {"name": "akari", "volume": {"events": [{"pos": 0, "value": 0}]}, "parts": [{"pos": 30720, "duration": 168480, "styleName": "VOICEROID2 Akari", "voice": {"compID": "10980+Tax", "langID": 0}, "notes": []}]}
-
-        name = os.path.splitext("north.s5p")[0]
+        fname = os.path.basename(self.infile)
+        name = os.path.splitext(fname)[0]
 
         vprj["title"] = name #タイトル
-        vprj["masterTrack"]["tempo"]["global"]["value"] = s5pj["tempo"][0]["beatPerMinute"] * 100
+        vprj["masterTrack"]["tempo"]["global"]["value"] = self.s5pj["tempo"][0]["beatPerMinute"] * 100
         #最初のとこ
 
-        for i in range(len(s5pj["tempo"])):#テンポ
+        for i in range(len(self.s5pj["tempo"])):#テンポ
             tmp = {}
-            tmp["pos"] = s5pj["tempo"][i]["position"]
-            tmp["value"] = s5pj["tempo"][i]["beatPerMinute"] * 100
+            tmp["pos"] = self.s5pj["tempo"][i]["position"]
+            tmp["value"] = self.s5pj["tempo"][i]["beatPerMinute"] * 100
 
             vprj["masterTrack"]["tempo"]["events"].append(tmp)
 
-        for i in range(len(s5pj["meter"])):  #拍子
+        for i in range(len(self.s5pj["meter"])):  #拍子
             tmp = {}
-            tmp["bar"] = s5pj["meter"][i]["measure"]
-            tmp["numer"] = s5pj["meter"][i]["beatPerMeasure"]
-            tmp["denom"] = s5pj["meter"][i]["beatGranularity"]
+            tmp["bar"] = self.s5pj["meter"][i]["measure"]
+            tmp["numer"] = self.s5pj["meter"][i]["beatPerMeasure"]
+            tmp["denom"] = self.s5pj["meter"][i]["beatGranularity"]
             vprj["masterTrack"]["timeSig"]["events"].append(tmp)
 
-        for j in range(len(s5pj["tracks"])):
+        for j in range(len(self.s5pj["tracks"])):
             vprj["tracks"].append(t_temp)
-            st_sy = int(s5pj["tracks"][j]["notes"][0]["onset"])
+            st_sy = int(self.s5pj["tracks"][j]["notes"][0]["onset"])
             st =  int(st_sy / 2822400000)  #開始ポイント
             vprj["tracks"][j]["parts"][0]["pos"] = st * 1920 #1分57600???
 
             pos = int(st * 2822400000)#s5pの開始タイム
 
-            for i in range(len(s5pj["tracks"][j]["notes"])):#歌詞
+            for i in range(len(self.s5pj["tracks"][j]["notes"])):#歌詞
                 tmp = {"lyric": "", "phoneme": "", "pos": 0, "duration": 0, "number": 0, "velocity": 64}
-                lyric = s5pj["tracks"][j]["notes"][i]["lyric"]
-                tmp["lyric"] = lyric
-                tmp["phoneme"] = pho[lyric]
-                tmp["pos"] = int((s5pj["tracks"][j]["notes"][i]["onset"] - pos) / 1470000 )#空白忘れてた
-                tmp["duration"] = int(s5pj["tracks"][j]["notes"][i]["duration"] / 1470000)
-                tmp["number"] = int(s5pj["tracks"][j]["notes"][i]["pitch"])
+
+                tmp["lyric"] = self.s5pf["tracks"][j]["notes"][i]["lyric"]
+                tmp["phoneme"] = self.s5pf["tracks"][j]["notes"][i]["phoneme"]
+                tmp["pos"] = int((self.s5pj["tracks"][j]["notes"][i]["onset"] - pos) / 1470000 )#空白忘れてた
+                tmp["duration"] = int(self.s5pj["tracks"][j]["notes"][i]["duration"] / 1470000)
+                tmp["number"] = int(self.s5pj["tracks"][j]["notes"][i]["pitch"])
+                tmp["velocity"] = int(self.s5pf["tracks"][j]["notes"][i]["velocity"])
                 dur = int(tmp["pos"] + tmp["duration"])
                 vprj["tracks"][j]["parts"][0]["notes"].append(tmp) 
 
@@ -90,11 +89,11 @@ class FileDrop(wx.FileDropTarget):
             self.window.outvpr = os.path.splitext(infile)[0] + '.vpr'
             self.window.infile_t.SetLabel(infile)
             self.window.outvpr_t.SetLabel(os.path.splitext(infile)[0] + '.vpr')
+            self.window.ReadS5p()
         return 0
 
 class FileSelect():
     def __init__(self, window, SetId):
-        self.ope = {0: ".s5p", 1: ".vpr"}
         self.window = window
         if SetId == 202:
             self.S5p()
@@ -115,6 +114,7 @@ class FileSelect():
             self.window.outvpr = os.path.splitext(infile)[0] + '.vpr'
             self.window.infile_t.SetLabel(infile)
             self.window.outvpr_t.SetLabel(os.path.splitext(infile)[0] + '.vpr')
+            self.window.ReadS5p()
 
     def Vpr(self):
         first_path = os.path.dirname(self.window.outvpr)
@@ -129,7 +129,7 @@ class FileSelect():
 
 class MainFrame(wx.Frame):
     def __init__(self):
-
+        self.ReadSettings()
 
         wx.Frame.__init__(self, None, wx.ID_ANY, "V-Conv", size=(700, 300))
 
@@ -277,50 +277,45 @@ class MainFrame(wx.Frame):
 
         self.pho.update(upho)
 
+        
     def ReadS5p(self):
         with open(self.infile, encoding='utf-8') as f:#s5p読み込み
-            s5pj = json.load(f)
+            self.s5pj = json.load(f)
 
-        self.s5pf = {"notes": []}
+        self.s5pf = {"tracks": []}
         
-        for j in range(len(s5pj["tracks"])):
-            st_sy = int(s5pj["tracks"][j]["notes"][0]["onset"])
-            st =  int(st_sy / 2822400000)  #開始ポイント
-            vprj["tracks"][j]["parts"][0]["pos"] = st * 1920 #1分57600???
+        for j in range(len(self.s5pj["tracks"])):
+            self.s5pf["tracks"].append({"notes": []})     
 
-            pos = int(st * 2822400000)#s5pの開始タイム
-
-            for i in range(len(s5pj["tracks"][j]["notes"])):#歌詞
+            for i in range(len(self.s5pj["tracks"][j]["notes"])):#歌詞
                 tmp = {"lyric": "", "phoneme": "", "pos": 0, "duration": 0, "number": 0, "velocity": 64}
-                lyric = s5pj["tracks"][j]["notes"][i]["lyric"]
+                lyric = self.s5pj["tracks"][j]["notes"][i]["lyric"]
                 tmp["lyric"] = lyric
-                tmp["phoneme"] = pho[lyric]
-                tmp["pos"] = int((s5pj["tracks"][j]["notes"][i]["onset"] - pos) / 1470000 )#空白忘れてた
-                tmp["duration"] = int(s5pj["tracks"][j]["notes"][i]["duration"] / 1470000)
-                tmp["number"] = int(s5pj["tracks"][j]["notes"][i]["pitch"])
-                dur = int(tmp["pos"] + tmp["duration"])
-                vprj["tracks"][j]["parts"][0]["notes"].append(tmp) 
-
-            vprj["tracks"][j]["parts"][0]["duration"] =  dur
+                tmp["phoneme"] = self.pho[lyric]
+                tmp["pos"] = int(self.s5pj["tracks"][j]["notes"][i]["onset"] / 1470000)#空白忘れてた
+                tmp["duration"] = int(self.s5pj["tracks"][j]["notes"][i]["duration"] / 1470000)
+                tmp["number"] = int(self.s5pj["tracks"][j]["notes"][i]["pitch"])
+                self.s5pf["tracks"][j]["notes"].append(tmp)
 
 
     def OnSelectFiles(self, event):
         SetId = event.GetId()
         FileSelect(self, SetId)
-        return 0
 
     def OnConversion(self, event):
-        self.infile = self.infile_t
-        self.outvpr = self.outvpr_t
+        self.infile = self.infile_t.GetValue()
+        self.outvpr = self.outvpr_t.GetValue()
+        print(self.infile)
 
         if self.vpr_c.GetValue() == True:
-            VprConv(self.infile, self.outvpr)
+            VprConv(self)
         elif self.ust_c.GetValue() == True:
             pass
 
+        FinishFrame().Show()
+
     def OnSettings(self, event):
         SetFrame().Show()
-
 
 class SetFrame(wx.Frame):
     def __init__(self):
@@ -360,25 +355,26 @@ class NoteFrame(wx.Frame):
         font_e = wx.Font(12, wx.DEFAULT, wx.NORMAL, wx.NORMAL, False, "Segoe UI")
         font_j = wx.Font(12, wx.DEFAULT, wx.NORMAL, wx.NORMAL, False, "メイリオ")
 
+class FinishFrame(wx.Frame):
+    def __init__(self):
+        wx.Frame.__init__(self, None, wx.ID_ANY, "ノート編集", size=(200, 150), style=wx.CAPTION | wx.CLOSE_BOX)
+        panel = wx.Panel(self, wx.ID_ANY)
+        box = wx.BoxSizer(wx.VERTICAL)
 
-        for i in range(5):
-            box[i] = wx.BoxSizer(wx.HORIZONTAL)
-            lyric[i]
-            phoneme[i]
-            duration[i]
-            number[i]
-            velocity[i]
+        btn = wx.Button(panel, wx.ID_ANY, "閉じる")
+        btn.Bind(wx.EVT_BUTTON, self.CloseBtn)
+        box.Add(wx.StaticText(panel, wx.ID_ANY, "変換が完了しました"), wx.CENTER)
+        box.Add(btn)
 
-        panel.SetSizer(vbox, 1, wx.ALL, 20)
+        panel.SetSizer(box)
 
-
-
+    def CloseBtn(self, event):
+        self.Close()
 
 if __name__ == "__main__":
-
     app = wx.App()
     #MainFrame().Show()
-    NoteFrame().Show()
+    FinishFrame().Show()
     app.MainLoop()
 
 
