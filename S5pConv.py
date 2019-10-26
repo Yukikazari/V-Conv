@@ -470,7 +470,11 @@ class FinishDialog(wx.Frame):
 if __name__ == "__main__":
     app = wx.App()
     MainFrame().Show()
+<<<<<<< HEAD
     #SetFrame().Show()
+=======
+    #FinishFrame().Show()
+>>>>>>> d67854a7af2ab2182650bdaa3d0b3c9bb7b0fd10
     app.MainLoop()
 
 
