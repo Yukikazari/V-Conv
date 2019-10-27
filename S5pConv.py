@@ -8,6 +8,8 @@ import copy
 
 #https://github.com/Yukikazari/V-Conv.git
 
+#めも　あとでファイルの時間ソートと表示と選択時処理を入れる。入れて。
+
 class VprConv():
     def __init__(self, window):
         self.infile = window.infile
@@ -78,6 +80,7 @@ class VprConv():
             os.rename(dir_name + '.zip', self.outfile)
         shutil.rmtree("./Project/Project")
 
+
 class FileDrop(wx.FileDropTarget):
     def __init__(self, window):
         wx.FileDropTarget.__init__(self)
@@ -92,6 +95,7 @@ class FileDrop(wx.FileDropTarget):
             self.window.outvpr_t.SetLabel(os.path.splitext(infile)[0] + '.vpr')
             self.window.ReadS5p()
         return 0
+
 
 class FileSelect():
     def __init__(self, window, SetId):
@@ -118,8 +122,13 @@ class FileSelect():
             self.window.ReadS5p()
 
     def Vpr(self):
-        first_path = os.path.dirname(self.window.outvpr)
-        first_file = os.path.basename(self.window.outvpr)
+        if self.window.infile == '':
+            first_path = os.path.dirname(self.window.setting['setting']['infile'])
+            first_file = ''
+        else:
+            first_path = os.path.dirname(self.window.outvpr)
+            first_file = os.path.basename(self.window.outvpr)
+
         filter = "VOCALOID5 file(*.vpr) | *.vpr"
         dialog = wx.FileDialog(None, '保存', first_path, first_file, filter, style=wx.FD_SAVE)  #atode
         dialog.ShowModal()
@@ -127,6 +136,7 @@ class FileSelect():
             outfile = dialog.GetPath()
             self.window.outvpr = outfile
             self.window.outvpr_t.SetLabel(outfile)
+
 
 class MainFrame(wx.Frame):
     def __init__(self):
@@ -142,7 +152,8 @@ class MainFrame(wx.Frame):
         font_j12 = wx.Font(12, wx.DEFAULT, wx.NORMAL, wx.NORMAL, False, "メイリオ")
         font_e10 = wx.Font(10, wx.DEFAULT, wx.NORMAL, wx.NORMAL, False, "Segoe UI")
         font_j10 = wx.Font(10, wx.DEFAULT, wx.NORMAL, wx.NORMAL, False, "メイリオ")
-
+        font_go = wx.Font(16, wx.DEFAULT, wx.NORMAL, wx.NORMAL, False, "メイリオ")
+        
         #Frame
         wx.Frame.__init__(self, None, wx.ID_ANY, "V-Conv", size=(800, 300))
         panel = wx.Panel(self, wx.ID_ANY)
@@ -163,13 +174,14 @@ class MainFrame(wx.Frame):
         box1_name.SetFont(font_j10)
 
         self.vpr_c.SetFont(font_e12)
-        self.vpr_c.SetValue(True)
         self.vpr_c.Disable()
         
         self.ust_c.SetFont(font_e12)
         self.ust_c.Disable()
 
         #Panel_1 event
+        self.vpr_c.Bind(wx.EVT_CHECKBOX, self.OnSelectConv)
+        self.ust_c.Bind(wx.EVT_CHECKBOX, self.OnSelectConv)
 
         #Panel_1 layout
         box1.Add(self.vpr_c, 1, wx.TOP, 10)
@@ -199,11 +211,11 @@ class MainFrame(wx.Frame):
         infile_b = wx.Button(panel2, 202, "…", size=(30, -1))
 
         self.outvpr_t = wx.TextCtrl(panel2, 211, self.outvpr)
-        outvpr_b = wx.Button(panel2, 212, "…", size=(30, -1))
+        self.outvpr_b = wx.Button(panel2, 212, "…", size=(30, -1))
         outvpr_n = wx.StaticText(panel2, wx.ID_ANY, "    vprファイル")
 
         self.outust_t = wx.TextCtrl(panel2, 221, "工事中")
-        outust_b = wx.Button(panel2, 222, "…", size=(30, -1))
+        self.outust_b = wx.Button(panel2, 222, "…", size=(30, -1))
         outust_n = wx.StaticText(panel2, wx.ID_ANY, "    ustファイル")
 
         #Panel_2 setting
@@ -215,15 +227,13 @@ class MainFrame(wx.Frame):
         self.outvpr_t.SetFont(font_j10)
         outvpr_n.SetFont(font_j10)
 
-        self.outust_t.SetFont(font_e10)
-        self.outust_t.Disable()  #ここ           
-        outust_b.Disable()  #ここ        
+        self.outust_t.SetFont(font_e10)    
         outust_n.SetFont(font_j10)
 
         #Panel_2 event
         infile_b.Bind(wx.EVT_BUTTON, self.OnSelectFiles)
-        outvpr_b.Bind(wx.EVT_BUTTON, self.OnSelectFiles)
-        outust_b.Bind(wx.EVT_BUTTON, self.OnSelectFiles)
+        self.outvpr_b.Bind(wx.EVT_BUTTON, self.OnSelectFiles)
+        self.outust_b.Bind(wx.EVT_BUTTON, self.OnSelectFiles)
 
         #Panel_2 layout
         grid21.Add(self.infile_t, wx.ID_ANY, wx.EXPAND | wx.TOP | wx.BOTTOM, 5)
@@ -233,13 +243,13 @@ class MainFrame(wx.Frame):
         grid22.Add(outvpr_n)
         grid22.Add(wx.StaticText(panel2, wx.ID_ANY, ""))
         grid22.Add(self.outvpr_t, wx.ID_ANY, wx.EXPAND)
-        grid22.Add(outvpr_b, wx.ID_ANY, wx.ALIGN_RIGHT)
+        grid22.Add(self.outvpr_b, wx.ID_ANY, wx.ALIGN_RIGHT)
         grid22.AddGrowableCol(0)
 
         grid23.Add(outust_n)
         grid23.Add(wx.StaticText(panel2, wx.ID_ANY, ""))
         grid23.Add(self.outust_t, wx.ID_ANY, wx.EXPAND)
-        grid23.Add(outust_b, wx.ID_ANY, wx.ALIGN_RIGHT)
+        grid23.Add(self.outust_b, wx.ID_ANY, wx.ALIGN_RIGHT)
         grid23.AddGrowableCol(0)
 
         box21.Add(grid21, 1, wx.EXPAND | wx.BOTTOM, 7)
@@ -254,30 +264,34 @@ class MainFrame(wx.Frame):
         hbox.Add(panel2, 1, wx.TOP, 10)
 
 
-        #Panel 3
+        #Panel_3
         panel3 = wx.Panel(panel, -1)
+
         grid3 = wx.GridSizer(rows=2, cols=1, gap=(0, 0))
+
         box31 = wx.BoxSizer(wx.VERTICAL)
         box32 = wx.BoxSizer(wx.VERTICAL)
 
-        font3 = wx.Font(16, wx.DEFAULT, wx.NORMAL, wx.NORMAL, False, "メイリオ")
-
+        #Panel_3 object
         text31 = wx.Button(panel3, wx.ID_ANY, "変換", size=(120, 60))
-        text31.SetFont(font3)
-        text31.Bind(wx.EVT_BUTTON, self.OnConversion)
-
         text32 = wx.Button(panel3, wx.ID_ANY, "ノート編集", size=(120, -1))
-        text32.SetFont(font_j12)
-
         text33 = wx.Button(panel3, wx.ID_ANY, "使い方", size=(100, -1))
+        text34 = wx.Button(panel3, wx.ID_ANY, "設定", size=(100, -1))
+
+        #Panel_3 setting
+        text31.SetFont(font_go)
+        text32.SetFont(font_j12)
         text33.SetFont(font_j12)
         text33.Disable()
-
-        text34 = wx.Button(panel3, wx.ID_ANY, "設定", size=(100, -1))
         text34.SetFont(font_j12)
+
+        #Panel_3 event
+        text31.Bind(wx.EVT_BUTTON, self.OnConversion)
+        #text32.Bind(wx.EVT_BUTTON, self.OnNote)
+        #text33.Bind(wx.EVT_BUTTON, self.OnHelp)
         text34.Bind(wx.EVT_BUTTON, self.OnSettings)
 
-
+        #Panel_3 layout
         box31.Add(wx.StaticText(panel3, wx.ID_ANY, ""))
         box31.Add(text31, flag=wx.CENTER | wx.ALIGN_TOP)
         box31.Add(text32, flag=wx.CENTER)
@@ -291,9 +305,15 @@ class MainFrame(wx.Frame):
         panel3.SetSizer(grid3)
         hbox.Add(panel3, 0,wx.RIGHT | wx.LEFT | wx.EXPAND, 10)
 
+
         panel.SetSizer(hbox)
+
+        self.SetValues()
+
+        self.Bind(wx.EVT_CLOSE, self.AppClose)
         self.SetDropTarget(FileDrop(self))
         self.Centre()
+
 
     def ReadSettings(self):
         self.base = os.path.dirname(os.path.abspath(__file__))
@@ -319,6 +339,12 @@ class MainFrame(wx.Frame):
         with open('./setting.json', encoding='utf-8') as f:  #設定
             self.setting = json.load(f)
 
+    def SetValues(self):
+        #Panel_1
+        self.vpr_c.SetValue(self.setting["setting"]["vprconv"])
+        self.ust_c.SetValue(self.setting["setting"]["ustconv"])
+        self.OnSelectConv('')
+
     def ReadS5p(self):
         with open(self.infile, encoding='utf-8') as f:#s5p読み込み
             self.s5pj = json.load(f)
@@ -342,6 +368,21 @@ class MainFrame(wx.Frame):
         SetId = event.GetId()
         FileSelect(self, SetId)
 
+    def OnSelectConv(self, event):
+        if self.vpr_c.GetValue() == True:
+            self.outvpr_t.Enable()
+            self.outvpr_b.Enable()
+        else:
+            self.outvpr_t.Disable()
+            self.outvpr_b.Disable()
+
+        if self.ust_c.GetValue() == True:
+            self.outust_t.Enable()
+            self.outust_b.Enable()
+        else:
+            self.outust_t.Disable()
+            self.outust_b.Disable()
+
     def OnConversion(self, event):
         self.outvpr = self.outvpr_t.GetValue()
         outfiles = ''
@@ -359,6 +400,7 @@ class MainFrame(wx.Frame):
 
 
         if self.ust_c.GetValue() == True:
+            #UstConv(self)
             outfiles += os.path.basename(self.outust) + '\n'
             pass
         if not outfiles == '':
@@ -366,21 +408,38 @@ class MainFrame(wx.Frame):
 
     def OnSettings(self, event):
         if self.setting_now == 0:
-            self.setting_now = 114514
-            frame = SetFrame(self)
-            frame.Show()
+            self.setting_now = 1
+            SetFrame(self).Show()
+
+    def AppClose(self, event):
+        with open('./setting.json', "w") as f:
+            json.dump(self.setting, f, indent=4)
+
+        try:
+            self.setting["tracks"] = self.s5pf["tracks"]
+            backup = self.base + './backup/' + os.path.basename(self.infile) + '.vconv'
+            with open(backup, 'w') as f:
+                json.dump(self.setting, f)
+        except AttributeError:
+            pass
+        
+        self.Destroy()
+
 
 class SetFrame(wx.Frame):
     def __init__(self, window):
         self.setting = copy.deepcopy(window.setting)
         self.window = window
 
-        wx.Frame.__init__(self, window, wx.ID_ANY, "設定", size=(400, 400), style= wx.DEFAULT_FRAME_STYLE | wx.FRAME_FLOAT_ON_PARENT | wx.TAB_TRAVERSAL)
-        notebook = wx.Notebook(self, wx.ID_ANY)
+        #Font
         font_e12 = wx.Font(12, wx.DEFAULT, wx.NORMAL, wx.NORMAL, False, "Segoe UI")
         font_j12 = wx.Font(12, wx.DEFAULT, wx.NORMAL, wx.NORMAL, False, "メイリオ")
         font_e10 = wx.Font(10, wx.DEFAULT, wx.NORMAL, wx.NORMAL, False, "Segoe UI")
         font_j10 = wx.Font(10, wx.DEFAULT, wx.NORMAL, wx.NORMAL, False, "メイリオ")
+
+        #Frame
+        wx.Frame.__init__(self, window, wx.ID_ANY, "設定", size=(400, 400), style= wx.DEFAULT_FRAME_STYLE | wx.FRAME_FLOAT_ON_PARENT | wx.TAB_TRAVERSAL)
+        notebook = wx.Notebook(self, wx.ID_ANY)
 
         panel1 = wx.Panel(notebook, wx.ID_ANY)
         panel2 = wx.Panel(notebook, wx.ID_ANY)
@@ -388,21 +447,38 @@ class SetFrame(wx.Frame):
         notebook.InsertPage(0, panel1, '保存設定')
         notebook.InsertPage(1, panel2, 'ノート編集')
 
+        #Panel_1
         box1 = wx.BoxSizer(wx.VERTICAL)
         box11_name = wx.StaticBox(panel1, wx.ID_ANY, '保存先フォルダ設定')
         box11 = wx.StaticBoxSizer(box11_name, wx.VERTICAL)
-        grid11 = wx.FlexGridSizer(rows=1, cols=2, gap=(0,0))
-
+        grid11 = wx.FlexGridSizer(rows=1, cols=2, gap=(0, 0))
+        box1n = wx.BoxSizer(wx.HORIZONTAL)
+              
+        #Panel_1 object
         self.cb111 = wx.CheckBox(panel1, wx.ID_ANY, '保存先フォルダを固定する')
-        self.cb111.SetFont(font_j10)
-        self.cb111.SetValue(self.setting["setting"]["dev"])
-        self.cb111.Bind(wx.EVT_CHECKBOX, self.OnChangecb111)
-        self.text111 = wx.TextCtrl(panel1, wx.ID_ANY, "")
+
+        self.text111 = wx.TextCtrl(panel1, wx.ID_ANY, self.setting["setting"]["dir_fix"])        
+        self.btn111 = wx.Button(panel1, wx.ID_ANY, "…", size=(30, -1))
+
+        btn1y = wx.Button(panel1, 1000, "決定", size=(80, -1))
+        btn1n = wx.Button(panel1, wx.ID_ANY, "キャンセル", size=(80, -1))
+
+        #Panel_1 setting
+        self.cb111.SetFont(font_j10)      
 
         self.text111.SetFont(font_j10)
-        self.btn111 = wx.Button(panel1, wx.ID_ANY, "…", size=(30, -1))
+
+        btn1y.SetFont(font_j10)
+        btn1n.SetFont(font_j10)
+
+        #Panel_1 event
+        self.cb111.Bind(wx.EVT_CHECKBOX, self.OnChangecb111)
         self.btn111.Bind(wx.EVT_BUTTON, self.OnSelectFiles)
 
+        btn1y.Bind(wx.EVT_BUTTON, self.OnClose)
+        btn1n.Bind(wx.EVT_BUTTON, self.OnClose)                        
+
+        #Panel_1 layout
         grid11.Add(self.text111, 1, wx.EXPAND)
         grid11.Add(self.btn111, 0, wx.ALIGN_RIGHT)
         grid11.AddGrowableCol(0)
@@ -410,48 +486,65 @@ class SetFrame(wx.Frame):
         box11.Add(self.cb111, 1)
         box11.Add(grid11, 1, wx.EXPAND)
 
-
-            
-        box1.Add(box11, 0, wx.TOP | wx.LEFT | wx.RIGHT | wx.EXPAND, 10)
-
-        box1n = wx.BoxSizer(wx.HORIZONTAL)
-        btn1y = wx.Button(panel1, 1000, "決定", size=(80, -1))
-        btn1y.SetFont(font_j10)
-        btn1y.Bind(wx.EVT_BUTTON, self.OnClose)
-        btn1n = wx.Button(panel1, wx.ID_ANY, "キャンセル", size=(80, -1))
-        btn1n.SetFont(font_j10)
-        btn1n.Bind(wx.EVT_BUTTON, self.OnClose)
-
         box1n.Add(btn1y, 0, wx.ALIGN_BOTTOM)
-        box1n.Add(btn1n, 0, wx.ALIGN_BOTTOM | wx.LEFT, 10)
-
+        box1n.Add(btn1n, 0, wx.ALIGN_BOTTOM | wx.LEFT, 10)        
+       
+        box1.Add(box11, 0, wx.TOP | wx.LEFT | wx.RIGHT | wx.EXPAND, 10)
         box1.Add(box1n, 1, wx.ALIGN_BOTTOM | wx.ALIGN_RIGHT | wx.ALL, 10)
 
-
         panel1.SetSizer(box1)
+
+        #Panel_2
 
         box2 = wx.BoxSizer(wx.VERTICAL)
 
         box21_name = wx.StaticBox(panel2, wx.ID_ANY, '無声化設定')
         box21 = wx.StaticBoxSizer(box21_name, wx.VERTICAL)
 
-        cb21 = wx.CheckBox(panel2, wx.ID_ANY, '文字種による無声化を有効にする')
-        cb21.SetFont(font_j10)
-        cb21.Bind(wx.EVT_CHECKBOX, self.OnSelectCb21)
+        box22_name = wx.StaticBox(panel2, wx.ID_ANY, '編集拡張')
+        box22 = wx.StaticBoxSizer(box22_name, wx.VERTICAL)
+
+        grid21 = wx.FlexGridSizer(rows=3, cols=2, gap=(0, 0))
+
+        box2n = wx.BoxSizer(wx.HORIZONTAL)
+
+        element = ('なし', '全体無声化', '1文字目無声化', '長音無声化')
+        
+        #Panel_2 object
+        self.cb21 = wx.CheckBox(panel2, wx.ID_ANY, '文字種による無声化を有効にする')        
 
         text211 = wx.StaticText(panel2, wx.ID_ANY, '   ひらがな：')
-        text211.SetFont(font_j10)
         text212 = wx.StaticText(panel2, wx.ID_ANY, '   カタカナ：')
-        text212.SetFont(font_j10)
         text213 = wx.StaticText(panel2, wx.ID_ANY, '   その他　：')
-        text213.SetFont(font_j10)
 
-        element = ('なし', '無声化', '1文字目無声化', '長音無声化')
         self.cbox211 = wx.ComboBox(panel2, wx.ID_ANY, self.setting["setting"]["dev_hira"], choices=element, style=wx.CB_READONLY)
         self.cbox212 = wx.ComboBox(panel2, wx.ID_ANY, self.setting["setting"]["dev_kata"], choices=element, style=wx.CB_READONLY)
         self.cbox213 = wx.ComboBox(panel2, wx.ID_ANY, self.setting["setting"]["dev_other"], choices=element, style=wx.CB_READONLY)
 
-        grid21 = wx.FlexGridSizer(rows=3, cols=2, gap=(0, 0))
+        self.cb22 = wx.CheckBox(panel2, wx.ID_ANY, 'ベロシティの変更を有効にする')
+
+        btn2y = wx.Button(panel2, 1000, "決定", size=(80, -1))
+        btn2n = wx.Button(panel2, wx.ID_ANY, "キャンセル", size=(80, -1))
+
+        #Panel_2 setting
+        self.cb21.SetFont(font_j10)
+
+        text211.SetFont(font_j10)
+        text212.SetFont(font_j10)
+        text213.SetFont(font_j10)        
+
+        self.cb22.SetFont(font_j10)
+
+        btn2y.SetFont(font_j10)
+        btn2n.SetFont(font_j10)
+
+        #Panel_2 event
+        self.cb21.Bind(wx.EVT_CHECKBOX, self.OnSelectCb21)
+
+        btn2y.Bind(wx.EVT_BUTTON, self.OnClose)
+        btn2n.Bind(wx.EVT_BUTTON, self.OnClose)
+
+        #Panel_2 layout
         grid21.Add(text211, 0, wx.TOP | wx.LEFT | wx.RIGHT, 5)
         grid21.Add(self.cbox211, 0, wx.TOP | wx.LEFT | wx.RIGHT, 5)        
         grid21.Add(text212, 0, wx.TOP | wx.LEFT | wx.RIGHT, 5)
@@ -459,37 +552,39 @@ class SetFrame(wx.Frame):
         grid21.Add(text213, 0, wx.TOP | wx.LEFT | wx.RIGHT, 5)
         grid21.Add(self.cbox213, 0, wx.TOP | wx.LEFT | wx.RIGHT, 5)
 
-        box21.Add(cb21, 0, wx.EXPAND)
+        box21.Add(self.cb21, 0, wx.EXPAND)
         box21.Add(grid21, 0, wx.EXPAND)
-        box2.Add(box21, 0, wx.EXPAND | wx.ALL, 10)        
-        
-        box22_name = wx.StaticBox(panel2, wx.ID_ANY, '編集拡張')
-        box22 = wx.StaticBoxSizer(box22_name, wx.VERTICAL)
-
-        self.cb21 = wx.CheckBox(panel2, wx.ID_ANY, 'ベロシティの変更を有効にする')
-        self.cb21.SetFont(font_j10)
-
-        box22.Add(self.cb21, 0, wx.EXPAND)
-        box2.Add(box22, 0, wx.EXPAND | wx.ALL, 10)
-
-        box2n = wx.BoxSizer(wx.HORIZONTAL)
-        btn2y = wx.Button(panel2, 1000, "決定", size=(80, -1))
-        btn2y.SetFont(font_j10)
-        btn2y.Bind(wx.EVT_BUTTON, self.OnClose)
-        btn2n = wx.Button(panel2, wx.ID_ANY, "キャンセル", size=(80, -1))
-        btn2n.SetFont(font_j10)
-        btn2n.Bind(wx.EVT_BUTTON, self.OnClose)
+      
+        box22.Add(self.cb22, 0, wx.EXPAND | wx.BOTTOM, 5)
 
         box2n.Add(btn2y, 0, wx.ALIGN_BOTTOM)
         box2n.Add(btn2n, 0, wx.ALIGN_BOTTOM | wx.LEFT, 10)
 
+        box2.Add(box21, 0, wx.EXPAND | wx.ALL, 10)  
+        box2.Add(box22, 0, wx.EXPAND | wx.ALL, 10)
         box2.Add(box2n, 1, wx.ALIGN_BOTTOM | wx.ALIGN_RIGHT | wx.ALL, 10)
-
 
         panel2.SetSizer(box2)
 
-        self.Bind(wx.EVT_CLOSE, self.OnClose)
+
+        self.SetValues()
         self.Centre()
+        self.Bind(wx.EVT_CLOSE, self.OnClose)
+
+    def SetValues(self):
+        #Panel_1
+        self.cb111.SetValue(self.setting["setting"]["dir"])
+        if self.setting["setting"]["dir"] == False:
+            self.text111.Disable()
+            self.btn111.Disable()
+
+        self.cb21.SetValue(self.setting["setting"]["dev"])
+        if self.setting["setting"]["dev"] == False:
+            self.cbox211.Disable()
+            self.cbox212.Disable()
+            self.cbox213.Disable()
+
+        self.cb22.SetValue(self.setting["setting"]["velocity"])
 
 
     def OnSelectFiles(self, event):
@@ -514,15 +609,23 @@ class SetFrame(wx.Frame):
             self.btn111.Disable()
 
     def OnSelectCb21(self, event):
-        pass
+        if self.cb21.GetValue() == True:
+            self.cbox211.Enable()
+            self.cbox212.Enable()
+            self.cbox213.Enable()
+        else:
+            self.cbox211.Disable()
+            self.cbox212.Disable()
+            self.cbox213.Disable()
             
     def OnClose(self, event):       
         if event.GetId() == 1000:
-            self.setting["setting"]["dev"] = self.cb111.GetValue()
+            self.setting["setting"]["dir"] = self.cb111.GetValue()
+            self.setting["setting"]["dev"] = self.cb21.GetValue()
             self.setting["setting"]["dev_hira"] = self.cbox211.GetValue()
             self.setting["setting"]["dev_kata"] = self.cbox212.GetValue()
             self.setting["setting"]["dev_other"] = self.cbox213.GetValue()
-            self.setting["setting"]["velocity"] = self.cb21.GetValue()
+            self.setting["setting"]["velocity"] = self.cb22.GetValue()
             self.window.setting = self.setting
             
         self.window.setting_now = 0
@@ -538,9 +641,11 @@ class NoteFrame(wx.Frame):
         font_e = wx.Font(12, wx.DEFAULT, wx.NORMAL, wx.NORMAL, False, "Segoe UI")
         font_j = wx.Font(12, wx.DEFAULT, wx.NORMAL, wx.NORMAL, False, "メイリオ")
 
-class FinishDialog(wx.Frame):
+
+class FinishDialog():
     def __init__(self, file):
         wx.MessageBox( file + "\n変換が完了しました")
+
 
 if __name__ == "__main__":
     app = wx.App()
