@@ -4,6 +4,7 @@ import json
 import shutil
 import codecs
 import wx
+import wx.grid
 import copy
 
 #https://github.com/Yukikazari/V-Conv.git
@@ -287,7 +288,7 @@ class MainFrame(wx.Frame):
 
         #Panel_3 event
         text31.Bind(wx.EVT_BUTTON, self.OnConversion)
-        #text32.Bind(wx.EVT_BUTTON, self.OnNote)
+        text32.Bind(wx.EVT_BUTTON, self.OnNote)
         #text33.Bind(wx.EVT_BUTTON, self.OnHelp)
         text34.Bind(wx.EVT_BUTTON, self.OnSettings)
 
@@ -313,6 +314,7 @@ class MainFrame(wx.Frame):
         self.Bind(wx.EVT_CLOSE, self.AppClose)
         self.SetDropTarget(FileDrop(self))
         self.Centre()
+        NoteFrame(self).Show()
 
 
     def ReadSettings(self):
@@ -405,6 +407,10 @@ class MainFrame(wx.Frame):
             pass
         if not outfiles == '':
             FinishDialog(outfiles)
+
+    def OnNote(self, event):
+        self.note_now = 1
+        NoteFrame(self).Show()
 
     def OnSettings(self, event):
         if self.setting_now == 0:
@@ -633,13 +639,55 @@ class SetFrame(wx.Frame):
 
      
 class NoteFrame(wx.Frame):
-    def __init__(self):
-        wx.Frame.__init__(self, None, wx.ID_ANY, "ノート編集", size=(400, 300))
+    def __init__(self, window):
+        self.window = window
 
+        self.Settings(0)
+
+
+        wx.Frame.__init__(self, window, wx.ID_ANY, "ノート編集", size=(800, 500), style= wx.DEFAULT_FRAME_STYLE | wx.FRAME_FLOAT_ON_PARENT | wx.TAB_TRAVERSAL)
         panel = wx.Panel(self, wx.ID_ANY)
-        vbox = wx.BoxSizer(wx.VERTICAL)
-        font_e = wx.Font(12, wx.DEFAULT, wx.NORMAL, wx.NORMAL, False, "Segoe UI")
-        font_j = wx.Font(12, wx.DEFAULT, wx.NORMAL, wx.NORMAL, False, "メイリオ")
+        d
+
+        grid = wx.FlexGridSizer(rows=1, cols=2, gap=(0, 0))
+
+
+        """box = wx.BoxSizer(wx.VERTICAL)
+        grid = wx.grid.Grid(panel)
+        grid.CreateGrid(50, 10)
+
+        grid.SetColLabelValue(0, "歌詞")
+        grid.SetColLabelValue(1, "よみ")
+        grid.SetColLabelValue(2, "発音")
+        grid.SetColLabelValue(3, "高さ")
+        grid.SetColLabelValue(4, "ベロシティ")
+        grid.SetColLabelValue(5, "")
+        grid.SetColLabelValue(6, "なし")
+        grid.SetColLabelValue(7, "全体無声化")
+        grid.SetColLabelValue(8, "1文字目無声化")
+        grid.SetColLabelValue(9, "長音無声化")
+
+        cb = wx.CheckBox(panel, 101, 'vpr (VOCALOID5)')
+        grid.SetCellValue(0, 0, cb)
+        box.Add(grid)
+        panel.SetSizer(box)"""
+
+        #EnableDragColSize
+        #HideCol
+        #SetReadOnly
+        #SetColAttr
+        self.Centre()
+
+    def Settings(self, num):
+        self.st_time = self.window.setting["tracks"][num]["notes"][0]["pos"]
+        pos = self.st_time
+        self.notescount
+        for i range(len(self.window.setting["tracks"][num]["notes"]))
+            self.notescount += 1
+            if not pos == self.window.setting["tracks"][num]["notes"][i]["pos"]:
+                pos == self.window.setting["tracks"][num]["notes"][i]["pos"]
+                self.notecount += 1
+
 
 
 class FinishDialog():
