@@ -54,10 +54,10 @@ class VprConv():
             pos = int(st * 2822400000)#s5pの開始タイム
 
             for i in range(len(self.s5pj["tracks"][j]["notes"])):#歌詞
-                tmp = {"lyric": "", "phoneme": "", "pos": 0, "duration": 0, "number": 0, "velocity": 64}
+                tmp = {"lyric": "", "phoname": "", "pos": 0, "duration": 0, "number": 0, "velocity": 64}
 
                 tmp["lyric"] = self.s5pf["tracks"][j]["notes"][i]["lyric"]
-                tmp["phoneme"] = self.s5pf["tracks"][j]["notes"][i]["phoneme"]
+                tmp["phoname"] = self.s5pf["tracks"][j]["notes"][i]["phoname"]
                 tmp["pos"] = int((self.s5pj["tracks"][j]["notes"][i]["onset"] - pos) / 1470000 )#空白忘れてた
                 tmp["duration"] = int(self.s5pj["tracks"][j]["notes"][i]["duration"] / 1470000)
                 tmp["number"] = int(self.s5pj["tracks"][j]["notes"][i]["pitch"])
@@ -314,7 +314,6 @@ class MainFrame(wx.Frame):
         self.Bind(wx.EVT_CLOSE, self.AppClose)
         self.SetDropTarget(FileDrop(self))
         self.Centre()
-        NoteFrame(self).Show()
 
 
     def ReadSettings(self):
@@ -357,13 +356,13 @@ class MainFrame(wx.Frame):
             self.s5pf["tracks"].append({"notes": []})     
 
             for i in range(len(self.s5pj["tracks"][j]["notes"])):#歌詞
-                tmp = {"lyric": "", "phoneme": "", "pos": 0, "duration": 0, "number": 0, "velocity": 64}
-                lyric = self.s5pj["tracks"][j]["notes"][i]["lyric"]
-                tmp["lyric"] = lyric
-                tmp["phoneme"] = self.pho[lyric]
+                tmp = {"lyric": "", "lyric_hira":"", "phoname": "", "pos": 0, "duration": 0, "number": 0, "velocity": 64}
+                tmp["lyric"] = self.s5pj["tracks"][j]["notes"][i]["lyric"]
                 tmp["pos"] = int(self.s5pj["tracks"][j]["notes"][i]["onset"] / 1470000)#空白忘れてた
                 tmp["duration"] = int(self.s5pj["tracks"][j]["notes"][i]["duration"] / 1470000)
                 tmp["number"] = int(self.s5pj["tracks"][j]["notes"][i]["pitch"])
+    #lyric_hira, phoname , velocity未設定
+
                 self.s5pf["tracks"][j]["notes"].append(tmp)
 
     def OnSelectFiles(self, event):
@@ -641,52 +640,45 @@ class SetFrame(wx.Frame):
 class NoteFrame(wx.Frame):
     def __init__(self, window):
         self.window = window
-
-        self.Settings(0)
+        self.FirstSettings()
 
 
         wx.Frame.__init__(self, window, wx.ID_ANY, "ノート編集", size=(800, 500), style= wx.DEFAULT_FRAME_STYLE | wx.FRAME_FLOAT_ON_PARENT | wx.TAB_TRAVERSAL)
         panel = wx.Panel(self, wx.ID_ANY)
-        d
+        box = wx.BoxSizer(wx.VERTICAL)
+        grid = wx.FlexGridSizer(rows=self.notescount, cols=9, gap=(0, 0))        
 
-        grid = wx.FlexGridSizer(rows=1, cols=2, gap=(0, 0))
+        select = wx.ComboBox(panel, wx.ID_ANY, "トラック1", choices=self.element, style=wx.CB_READONLY)
+        for i in range(len(self.window.s5pf["tracks"][0]["notes"])):
+            exec('self.lyric_' + str(i) + '_0 = wx.StaticText(panel, i * 10, self.window.s5pf["tracks"][0]["notes"][i]["lyric"])')
+            exec('self.lyric_' + str(i) + '_1 = wx.StaticText(panel, i * 10, self.window.s5pf["tracks"][0]["notes"][i]["lyric"])')
+
+            exec('grid.Add(self.lyric_' + str(i) + '_0)')
+            exec('grid.Add(self.lyric_' + str(i) + '_1)')
+
+        #select.Bind(wx.EVT_COMBOBOX, )
 
 
-        """box = wx.BoxSizer(wx.VERTICAL)
-        grid = wx.grid.Grid(panel)
-        grid.CreateGrid(50, 10)
 
-        grid.SetColLabelValue(0, "歌詞")
-        grid.SetColLabelValue(1, "よみ")
-        grid.SetColLabelValue(2, "発音")
-        grid.SetColLabelValue(3, "高さ")
-        grid.SetColLabelValue(4, "ベロシティ")
-        grid.SetColLabelValue(5, "")
-        grid.SetColLabelValue(6, "なし")
-        grid.SetColLabelValue(7, "全体無声化")
-        grid.SetColLabelValue(8, "1文字目無声化")
-        grid.SetColLabelValue(9, "長音無声化")
-
-        cb = wx.CheckBox(panel, 101, 'vpr (VOCALOID5)')
-        grid.SetCellValue(0, 0, cb)
+        box.Add(select)
         box.Add(grid)
-        panel.SetSizer(box)"""
+        panel.SetSizer(box)
 
-        #EnableDragColSize
-        #HideCol
-        #SetReadOnly
-        #SetColAttr
         self.Centre()
 
-    def Settings(self, num):
-        self.st_time = self.window.setting["tracks"][num]["notes"][0]["pos"]
+    def FirstSettings(self):
+        self.st_time = self.window.s5pf["tracks"][0]["notes"][0]["pos"]
         pos = self.st_time
-        self.notescount
-        for i range(len(self.window.setting["tracks"][num]["notes"]))
+        self.notescount = 0
+        for i in range(len(self.window.s5pf["tracks"][0]["notes"])):
             self.notescount += 1
-            if not pos == self.window.setting["tracks"][num]["notes"][i]["pos"]:
-                pos == self.window.setting["tracks"][num]["notes"][i]["pos"]
-                self.notecount += 1
+            if not pos == self.window.s5pf["tracks"][0]["notes"][i]["pos"]:
+                pos == self.window.s5pf["tracks"][0]["notes"][i]["pos"]
+                self.notescount += 1
+
+        self.element = []
+        for i in range(len(self.window.s5pf["tracks"])):
+            self.element.append("トラック" + str(i + 1))
 
 
 
