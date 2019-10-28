@@ -4,7 +4,6 @@ import json
 import shutil
 import codecs
 import wx
-import wx.grid
 import copy
 
 #https://github.com/Yukikazari/V-Conv.git
