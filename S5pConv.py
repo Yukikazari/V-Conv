@@ -648,9 +648,37 @@ class NoteFrame(wx.Frame):
         grid = wx.FlexGridSizer(rows=self.notescount, cols=9, gap=(0, 0))        
 
         select = wx.ComboBox(panel, wx.ID_ANY, "トラック1", choices=self.element, style=wx.CB_READONLY)
+
+        text1 = wx.StaticText(panel, wx.ID_ANY, '歌詞')
+        text2 = wx.StaticText(panel, wx.ID_ANY, 'よみ')
+        text3 = wx.StaticText(panel, wx.ID_ANY, '発音')
+        text4 = wx.StaticText(panel, wx.ID_ANY, '長さ')
+        text5 = wx.StaticText(panel, wx.ID_ANY, '高さ')
+        text6 = wx.StaticText(panel, wx.ID_ANY, '')
+        text7 = wx.StaticText(panel, wx.ID_ANY, 'なし')
+        text8 = wx.StaticText(panel, wx.ID_ANY, '全体無声化')
+        text9 = wx.StaticText(panel, wx.ID_ANY, '1文字目無声化')
+        text10 = wx.StaticText(panel, wx.ID_ANY, '長音無声化')
+          
+
+        grid.Add(text1)
+        grid.Add(text2)
+        grid.Add(text3)
+        grid.Add(text4)
+        grid.Add(text5)
+        grid.Add(text6)
+
+
+
+
         for i in range(len(self.window.s5pf["tracks"][0]["notes"])):
             exec('self.lyric_' + str(i) + '_0 = wx.StaticText(panel, i * 10, self.window.s5pf["tracks"][0]["notes"][i]["lyric"])')
-            exec('self.lyric_' + str(i) + '_1 = wx.StaticText(panel, i * 10, self.window.s5pf["tracks"][0]["notes"][i]["lyric"])')
+            exec('self.lyric_' + str(i) + '_1 = wx.StaticText(panel, i * 10 + 1, self.window.s5pf["tracks"][0]["notes"][i]["lyric_hira"])')
+            exec('self.lyric_' + str(i) + '_2 = wx.StaticText(panel, i * 10 + 2, self.window.s5pf["tracks"][0]["notes"][i]["phoname"])')
+            exec('self.lyric_' + str(i) + '_3 = wx.StaticText(panel, i * 10 + 3, self.window.s5pf["tracks"][0]["notes"][i]["pos"])')
+
+
+
 
             exec('grid.Add(self.lyric_' + str(i) + '_0)')
             exec('grid.Add(self.lyric_' + str(i) + '_1)')
