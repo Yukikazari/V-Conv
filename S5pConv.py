@@ -718,16 +718,16 @@ class NoteFrame(wx.Frame):
             text8[i] = wx.StaticText(panels[i], wx.ID_ANY, '1文字目\n無声化', style=wx.TE_CENTER, size=(50,-1))
             text9[i] = wx.StaticText(panels[i], wx.ID_ANY, '長音\n無声化', style=wx.TE_CENTER, size=(50,-1))
 
-            grid[i].Add(text0, 0, wx.TOP, 5)
-            grid[i].Add(text1, 0, wx.TOP, 5)
-            grid[i].Add(text2, 0, wx.TOP, 5)
-            grid[i].Add(text3, 0, wx.TOP, 5)
-            grid[i].Add(text4, 0, wx.TOP, 5)
-            grid[i].Add(text5, 0, wx.TOP, 5)
-            grid[i].Add(text6, 0, wx.TOP, 5)
-            grid[i].Add(text7)
-            grid[i].Add(text8)
-            grid[i].Add(text9)
+            grid[i].Add(text0[i], 0, wx.TOP, 5)
+            grid[i].Add(text1[i], 0, wx.TOP, 5)
+            grid[i].Add(text2[i], 0, wx.TOP, 5)
+            grid[i].Add(text3[i], 0, wx.TOP, 5)
+            grid[i].Add(text4[i], 0, wx.TOP, 5)
+            grid[i].Add(text5[i], 0, wx.TOP, 5)
+            grid[i].Add(text6[i], 0, wx.TOP, 5)
+            grid[i].Add(text7[i])
+            grid[i].Add(text8[i])
+            grid[i].Add(text9[i])
 
             self.note_0 = []
             self.note_1 = []
