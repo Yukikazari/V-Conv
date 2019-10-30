@@ -4,6 +4,7 @@ import json
 import shutil
 import codecs
 import wx
+import wx.lib.scrolledpanel as scrolled
 import copy
 
 #https://github.com/Yukikazari/V-Conv.git
@@ -53,10 +54,11 @@ class VprConv():
             pos = int(st * 2822400000)#s5pの開始タイム
 
             for i in range(len(self.s5pj["tracks"][j]["notes"])):#歌詞
-                tmp = {"lyric": "", "phoname": "", "pos": 0, "duration": 0, "number": 0, "velocity": 64}
+                tmp = {"lyric": "", "phoneme": "", "pos": 0, "duration": 0, "number": 0, "velocity": 64}
 
                 tmp["lyric"] = self.s5pf["tracks"][j]["notes"][i]["lyric"]
-                tmp["phoname"] = self.s5pf["tracks"][j]["notes"][i]["phoname"]
+                tmp["phoneme"] = self.s5pf["tracks"][j]["notes"][i]["phoneme"]
+                print(self.s5pf["tracks"][j]["notes"][i]["phoneme"])
                 tmp["pos"] = int((self.s5pj["tracks"][j]["notes"][i]["onset"] - pos) / 1470000 )#空白忘れてた
                 tmp["duration"] = int(self.s5pj["tracks"][j]["notes"][i]["duration"] / 1470000)
                 tmp["number"] = int(self.s5pj["tracks"][j]["notes"][i]["pitch"])
@@ -355,13 +357,14 @@ class MainFrame(wx.Frame):
             self.s5pf["tracks"].append({"notes": []})     
 
             for i in range(len(self.s5pj["tracks"][j]["notes"])):#歌詞
-                tmp = {"lyric": "", "lyric_hira":"", "phoname": "", "pos": 0, "duration": 0, "number": 0, "velocity": 64}
-                tmp["lyric"] = self.s5pj["tracks"][j]["notes"][i]["lyric"]
+                tmp = {"lyric": "", "lyric_hira":"", "phoneme": "", "pos": 0, "duration": 0, "number": 0, "velocity": 64}
+                lyric = self.s5pj["tracks"][j]["notes"][i]["lyric"]
+                tmp["lyric"] = lyric
+                tmp["phoneme"] = self.pho["normal"][lyric]
                 tmp["pos"] = int(self.s5pj["tracks"][j]["notes"][i]["onset"] / 1470000)#空白忘れてた
                 tmp["duration"] = int(self.s5pj["tracks"][j]["notes"][i]["duration"] / 1470000)
                 tmp["number"] = int(self.s5pj["tracks"][j]["notes"][i]["pitch"])
-    #lyric_hira, phoname , velocity未設定
-
+    #lyric_hira, phoneme , velocity未設定
                 self.s5pf["tracks"][j]["notes"].append(tmp)
 
     def OnSelectFiles(self, event):
@@ -637,61 +640,97 @@ class SetFrame(wx.Frame):
 
      
 class NoteFrame(wx.Frame):
-    def __init__(self, window):
-        self.window = window
-        self.FirstSettings()
+    def __init__(self):
+        #self.window = window
+        #self.FirstSettings()
+        self.element = ["トラック1"]
 
 
-        wx.Frame.__init__(self, window, wx.ID_ANY, "ノート編集", size=(800, 500), style= wx.DEFAULT_FRAME_STYLE | wx.FRAME_FLOAT_ON_PARENT | wx.TAB_TRAVERSAL)
+
+        #Frame 親変更 , style= wx.DEFAULT_FRAME_STYLE | wx.FRAME_FLOAT_ON_PARENT | wx.TAB_TRAVERSAL
+        wx.Frame.__init__(self, None, wx.ID_ANY, "ノート編集", size=(850, 600))
         panel = wx.Panel(self, wx.ID_ANY)
-        box = wx.BoxSizer(wx.VERTICAL)
-        grid = wx.FlexGridSizer(rows=self.notescount, cols=9, gap=(0, 0))        
+        box_root = wx.BoxSizer(wx.HORIZONTAL)
+
+        #左側
+        box_left = wx.BoxSizer(wx.VERTICAL)
 
         select = wx.ComboBox(panel, wx.ID_ANY, "トラック1", choices=self.element, style=wx.CB_READONLY)
 
-        text1 = wx.StaticText(panel, wx.ID_ANY, '歌詞')
-        text2 = wx.StaticText(panel, wx.ID_ANY, 'よみ')
-        text3 = wx.StaticText(panel, wx.ID_ANY, '発音')
-        text4 = wx.StaticText(panel, wx.ID_ANY, '長さ')
-        text5 = wx.StaticText(panel, wx.ID_ANY, '高さ')
-        text6 = wx.StaticText(panel, wx.ID_ANY, '')
-        text7 = wx.StaticText(panel, wx.ID_ANY, 'なし')
-        text8 = wx.StaticText(panel, wx.ID_ANY, '全体無声化')
-        text9 = wx.StaticText(panel, wx.ID_ANY, '1文字目無声化')
-        text10 = wx.StaticText(panel, wx.ID_ANY, '長音無声化')
+
+        #Panel_1
+        panel1 = scrolled.ScrolledPanel(panel, wx.ID_ANY, size=(150, 300))
+        panel1.SetupScrolling()
+        box1 = wx.BoxSizer(wx.VERTICAL)
+        
+        text = wx.RadioButton(panel1, wx.ID_ANY, "あああ")
+        text.SetBackgroundColour("#b0b0b0")
+        
+        box1.Add(text, 0, wx.EXPAND)
+        panel1.SetSizer(box1)
+        panel1.SetBackgroundColour("#ffffff")
+
+        box_left.Add(select, 0, wx.ALL, 10)        
+        box_left.Add(panel1, 0, wx.LEFT, 10) 
+
+        box_root.Add(box_left)
+
+        #右側
+        #Panel_2
+        panel2 = scrolled.ScrolledPanel(panel, wx.ID_ANY)
+        panel2.SetupScrolling()
+
+        grid = wx.FlexGridSizer(rows=1, cols=10, gap=(0, 0))        
+
+        text0 = wx.StaticText(panel2, wx.ID_ANY, '歌詞', style=wx.TE_CENTER, size=(80,-1))
+        text1 = wx.StaticText(panel2, wx.ID_ANY, 'よみ', style=wx.TE_CENTER, size=(80,-1))
+        text2 = wx.StaticText(panel2, wx.ID_ANY, '発音', style=wx.TE_CENTER, size=(80,-1))
+        text3 = wx.StaticText(panel2, wx.ID_ANY, '長さ', style=wx.TE_CENTER, size=(80,-1))
+        text4 = wx.StaticText(panel2, wx.ID_ANY, '高さ', style=wx.TE_CENTER, size=(80,-1))
+        text5 = wx.StaticText(panel2, wx.ID_ANY, '', size=(10,-1))
+        text6 = wx.StaticText(panel2, wx.ID_ANY, 'なし', style=wx.TE_CENTER, size=(50,-1))
+        text7 = wx.StaticText(panel2, wx.ID_ANY, '全体\n無声化', style=wx.TE_CENTER, size=(50,-1))
+        text8 = wx.StaticText(panel2, wx.ID_ANY, '1文字目\n無声化', style=wx.TE_CENTER, size=(50,-1))
+        text9 = wx.StaticText(panel2, wx.ID_ANY, '長音\n無声化', style=wx.TE_CENTER, size=(50,-1))
           
+        grid.Add(text0, 0, wx.TOP, 5)
+        grid.Add(text1, 0, wx.TOP, 5)
+        grid.Add(text2, 0, wx.TOP, 5)
+        grid.Add(text3, 0, wx.TOP, 5)
+        grid.Add(text4, 0, wx.TOP, 5)
+        grid.Add(text5, 0, wx.TOP, 5)
+        grid.Add(text6, 0, wx.TOP, 5)
+        grid.Add(text7)
+        grid.Add(text8)
+        grid.Add(text9)
 
-        grid.Add(text1)
-        grid.Add(text2)
-        grid.Add(text3)
-        grid.Add(text4)
-        grid.Add(text5)
-        grid.Add(text6)
+        self.note_0 = []
+        self.note_1 = []
+        self.note_2 = []
+        self.note_3 = []
+        self.note_4 = []
+        self.note_5 = []
+        self.note_6 = []
+        self.note_7 = []
+        self.note_8 = []
+        self.note_9 = []
 
 
 
-
-        for i in range(len(self.window.s5pf["tracks"][0]["notes"])):
-            exec('self.lyric_' + str(i) + '_0 = wx.StaticText(panel, i * 10, self.window.s5pf["tracks"][0]["notes"][i]["lyric"])')
-            exec('self.lyric_' + str(i) + '_1 = wx.StaticText(panel, i * 10 + 1, self.window.s5pf["tracks"][0]["notes"][i]["lyric_hira"])')
-            exec('self.lyric_' + str(i) + '_2 = wx.StaticText(panel, i * 10 + 2, self.window.s5pf["tracks"][0]["notes"][i]["phoname"])')
-            exec('self.lyric_' + str(i) + '_3 = wx.StaticText(panel, i * 10 + 3, self.window.s5pf["tracks"][0]["notes"][i]["pos"])')
+        panel2.SetSizer(grid)
+        panel2.SetBackgroundColour("#ffe0ff")
+        box_root.Add(panel2, 1, wx.EXPAND | wx.ALL, 10)
 
 
+        panel.SetSizer(box_root)
 
-
-            exec('grid.Add(self.lyric_' + str(i) + '_0)')
-            exec('grid.Add(self.lyric_' + str(i) + '_1)')
+        self.Centre()
 
         #select.Bind(wx.EVT_COMBOBOX, )
 
 
 
-        box.Add(select)
-        box.Add(grid)
-        panel.SetSizer(box)
 
-        self.Centre()
 
     def FirstSettings(self):
         self.st_time = self.window.s5pf["tracks"][0]["notes"][0]["pos"]
@@ -716,8 +755,71 @@ class FinishDialog():
 
 if __name__ == "__main__":
     app = wx.App()
-    MainFrame().Show()
+    #MainFrame().Show()
     #SetFrame().Show()
+    NoteFrame().Show()
     app.MainLoop()
 
 
+
+
+
+"""        for i in range(len(self.window.s5pf["tracks"][0]["notes"])):
+            exec('note_' + str(i) + '_0 = wx.TextCtrl(panel, i * 10, self.window.s5pf["tracks"][0]["notes"][i]["lyric"])')
+            exec('note_' + str(i) + '_1 = wx.TextCtrl(panel, i * 10 + 1, self.window.s5pf["tracks"][0]["notes"][i]["lyric_hira"])')
+            exec('note_' + str(i) + '_2 = wx.StaticText(panel, i * 10 + 2, self.window.s5pf["tracks"][0]["notes"][i]["phoneme"])')
+            exec('note_' + str(i) + '_3 = wx.StaticText(panel, i * 10 + 3, str(self.window.s5pf["tracks"][0]["notes"][i]["duration"]))')
+            exec('note_' + str(i) + '_4 = wx.StaticText(panel, i * 10 + 4, str(self.window.s5pf["tracks"][0]["notes"][i]["number"]))')
+            exec('note_' + str(i) + '_5 = wx.StaticText(panel, i * 10 + 5, "")')
+            exec('note_' + str(i) + '_6 = wx.RadioButton(panel, i * 10 + 6, "", style=wx.RB_GROUP)')
+            exec('note_' + str(i) + '_7 = wx.RadioButton(panel, i * 10 + 7, "")')
+            exec('note_' + str(i) + '_8 = wx.RadioButton(panel, i * 10 + 8, "")')
+            exec('note_' + str(i) + '_9 = wx.RadioButton(panel, i * 10 + 9, "")')
+
+
+            exec('grid.Add(note_' + str(i) + '_0)')
+            exec('grid.Add(note_' + str(i) + '_1)')
+            exec('grid.Add(note_' + str(i) + '_2)')
+            exec('grid.Add(note_' + str(i) + '_3)')
+            exec('grid.Add(note_' + str(i) + '_4)')
+            exec('grid.Add(note_' + str(i) + '_5)')
+            exec('grid.Add(note_' + str(i) + '_6)')
+            exec('grid.Add(note_' + str(i) + '_7)')
+            exec('grid.Add(note_' + str(i) + '_8)')
+            exec('grid.Add(note_' + str(i) + '_9)')
+"""
+
+"""        for i in range(20):
+            self.note_0.append(i)
+            self.note_1.append(i)
+            self.note_2.append(i)
+            self.note_3.append(i)
+            self.note_4.append(i)
+            self.note_5.append(i)
+            self.note_6.append(i)
+            self.note_7.append(i)
+            self.note_8.append(i)
+            self.note_9.append(i)
+
+            self.note_0[i] = wx.TextCtrl(panel, i * 10, self.window.s5pf["tracks"][0]["notes"][i]["lyric"])
+            self.note_1[i] = wx.TextCtrl(panel, i * 10 + 1, self.window.s5pf["tracks"][0]["notes"][i]["lyric_hira"])
+            self.note_2[i] = wx.StaticText(panel, i * 10 + 2, self.window.s5pf["tracks"][0]["notes"][i]["phoneme"])
+            self.note_3[i] = wx.StaticText(panel, i * 10 + 3, str(self.window.s5pf["tracks"][0]["notes"][i]["duration"]))
+            self.note_4[i] = wx.StaticText(panel, i * 10 + 4, str(self.window.s5pf["tracks"][0]["notes"][i]["number"]))
+            self.note_5[i] = wx.StaticText(panel, i * 10 + 5, "")
+            self.note_6[i] = wx.RadioButton(panel, i * 10 + 6, "", style=wx.RB_GROUP)
+            self.note_7[i] = wx.RadioButton(panel, i * 10 + 7, "")
+            self.note_8[i] = wx.RadioButton(panel, i * 10 + 8, "")
+            self.note_9[i] = wx.RadioButton(panel, i * 10 + 9, "")
+
+            grid.Add(note_0[i])
+            grid.Add(note_1[i])
+            grid.Add(note_2[i])
+            grid.Add(note_3[i])
+            grid.Add(note_4[i])
+            grid.Add(note_5[i])
+            grid.Add(note_6[i])
+            grid.Add(note_7[i])
+            grid.Add(note_8[i])
+            grid.Add(note_9[i])
+"""
