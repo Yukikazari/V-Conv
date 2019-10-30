@@ -688,6 +688,17 @@ class NoteFrame(wx.Frame):
         text8 = []
         text9 = []
 
+        self.note_0 = []
+        self.note_1 = []
+        self.note_2 = []
+        self.note_3 = []
+        self.note_4 = []
+        self.note_5 = []
+        self.note_6 = []
+        self.note_7 = []
+        self.note_8 = []
+        self.note_9 = []
+
         #右側
         for i in range(5):
             panels.append(i)
@@ -729,50 +740,39 @@ class NoteFrame(wx.Frame):
             grid[i].Add(text8[i])
             grid[i].Add(text9[i])
 
-            self.note_0 = []
-            self.note_1 = []
-            self.note_2 = []
-            self.note_3 = []
-            self.note_4 = []
-            self.note_5 = []
-            self.note_6 = []
-            self.note_7 = []
-            self.note_8 = []
-            self.note_9 = []
-
             for j in range(i*100, i*100+100):
-                self.note_0.append([i, j])
-                self.note_1.append([i, j])
-                self.note_2.append([i, j])
-                self.note_3.append([i, j])
-                self.note_4.append([i, j])
-                self.note_5.append([i, j])
-                self.note_6.append([i, j])
-                self.note_7.append([i, j])
-                self.note_8.append([i, j])
-                self.note_9.append([i, j])
+                self.note_0.append([j])
+                self.note_1.append([j])
+                self.note_2.append([j])
+                self.note_3.append([j])
+                self.note_4.append([j])
+                self.note_5.append([j])
+                self.note_6.append([j])
+                self.note_7.append([j])
+                self.note_8.append([j])
+                self.note_9.append([j])
 
-                self.note_0[i, j] = wx.TextCtrl(panels[i], j * 10, self.window.s5pf["tracks"][0]["notes"][i]["lyric"])
-                self.note_1[i, j] = wx.TextCtrl(panels[i], j * 10 + 1, self.window.s5pf["tracks"][0]["notes"][i]["lyric_hira"])
-                self.note_2[i, j] = wx.StaticText(panels[i], j * 10 + 2, self.window.s5pf["tracks"][0]["notes"][i]["phoneme"])
-                self.note_3[i, j] = wx.StaticText(panels[i], j * 10 + 3, str(self.window.s5pf["tracks"][0]["notes"][i]["duration"]))
-                self.note_4[i, j] = wx.StaticText(panels[i], j * 10 + 4, str(self.window.s5pf["tracks"][0]["notes"][i]["number"]))
-                self.note_5[i, j] = wx.StaticText(panels[i], j * 10 + 5, "")
-                self.note_6[i, j] = wx.RadioButton(panels[i], j * 10 + 6, "", style=wx.RB_GROUP)
-                self.note_7[i, j] = wx.RadioButton(panels[i], j * 10 + 7, "")
-                self.note_8[i, j] = wx.RadioButton(panels[i], j * 10 + 8, "")
-                self.note_9[i, j] = wx.RadioButton(panels[i], j * 10 + 9, "")
+                self.note_0[j] = wx.TextCtrl(panels[i], j * 10, self.window.s5pf["tracks"][0]["notes"][j]["lyric"])
+                self.note_1[j] = wx.TextCtrl(panels[i], j * 10 + 1, self.window.s5pf["tracks"][0]["notes"][j]["lyric_hira"])
+                self.note_2[j] = wx.StaticText(panels[i], j * 10 + 2, self.window.s5pf["tracks"][0]["notes"][j]["phoneme"])
+                self.note_3[j] = wx.StaticText(panels[i], j * 10 + 3, str(self.window.s5pf["tracks"][0]["notes"][j]["duration"]))
+                self.note_4[j] = wx.StaticText(panels[i], j * 10 + 4, str(self.window.s5pf["tracks"][0]["notes"][j]["number"]))
+                self.note_5[j] = wx.StaticText(panels[i], j * 10 + 5, "")
+                self.note_6[j] = wx.RadioButton(panels[i], j * 10 + 6, "", style=wx.RB_GROUP)
+                self.note_7[j] = wx.RadioButton(panels[i], j * 10 + 7, "")
+                self.note_8[j] = wx.RadioButton(panels[i], j * 10 + 8, "")
+                self.note_9[j] = wx.RadioButton(panels[i], j * 10 + 9, "")
 
-                grid[i].Add(note_0[i, j])
-                grid[i].Add(note_1[i, j])
-                grid[i].Add(note_2[i, j])
-                grid[i].Add(note_3[i, j])
-                grid[i].Add(note_4[i, j])
-                grid[i].Add(note_5[i, j])
-                grid[i].Add(note_6[i, j])
-                grid[i].Add(note_7[i, j])
-                grid[i].Add(note_8[i, j])
-                grid[i].Add(note_9[i, j])
+                grid[i].Add(note_0[j])
+                grid[i].Add(note_1[j])
+                grid[i].Add(note_2[j])
+                grid[i].Add(note_3[j])
+                grid[i].Add(note_4[j])
+                grid[i].Add(note_5[j])
+                grid[i].Add(note_6[j])
+                grid[i].Add(note_7[j])
+                grid[i].Add(note_8[j])
+                grid[i].Add(note_9[j])
 
             panels[i].SetSizer(grid[i])
             panels[i].Hide()
@@ -780,7 +780,7 @@ class NoteFrame(wx.Frame):
 
         box_root.Add(panels[0], 1, wx.EXPAND | wx.ALL, 10)
 
-
+        panels[0].Show()
         panel.SetSizer(box_root)
 
         self.Centre()
