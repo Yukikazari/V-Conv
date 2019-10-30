@@ -640,15 +640,15 @@ class SetFrame(wx.Frame):
 
      
 class NoteFrame(wx.Frame):
-    def __init__(self):
-        #self.window = window
-        #self.FirstSettings()
+    def __init__(self, window):
+        self.window = window
+        self.FirstSettings()
         self.element = ["トラック1"]
 
 
 
         #Frame 親変更 , style= wx.DEFAULT_FRAME_STYLE | wx.FRAME_FLOAT_ON_PARENT | wx.TAB_TRAVERSAL
-        wx.Frame.__init__(self, None, wx.ID_ANY, "ノート編集", size=(850, 600))
+        wx.Frame.__init__(self, window, wx.ID_ANY, "ノート編集", size=(850, 600) , style= wx.DEFAULT_FRAME_STYLE | wx.FRAME_FLOAT_ON_PARENT | wx.TAB_TRAVERSAL)
         panel = wx.Panel(self, wx.ID_ANY)
         box_root = wx.BoxSizer(wx.HORIZONTAL)
 
@@ -814,9 +814,9 @@ class FinishDialog():
 
 if __name__ == "__main__":
     app = wx.App()
-    #MainFrame().Show()
+    MainFrame().Show()
     #SetFrame().Show()
-    NoteFrame().Show()
+    #NoteFrame().Show()
     app.MainLoop()
 
 
