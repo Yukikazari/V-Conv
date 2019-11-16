@@ -259,20 +259,20 @@ class MainFrame(wx.Frame):
         self.outust_b.Bind(wx.EVT_BUTTON, self.OnSelectFiles)
 
         #Panel_2 layout
-        grid21.Add(self.infile_t, wx.ID_ANY, wx.EXPAND | wx.TOP | wx.BOTTOM, 5)
-        grid21.Add(infile_b, wx.ID_ANY, wx.ALIGN_RIGHT | wx.TOP | wx.BOTTOM, 5)
+        grid21.Add(self.infile_t, 0, wx.EXPAND | wx.TOP | wx.BOTTOM, 5)
+        grid21.Add(infile_b, 0, wx.ALIGN_RIGHT | wx.TOP | wx.BOTTOM, 5)
         grid21.AddGrowableCol(0)
 
         grid22.Add(outvpr_n)
         grid22.Add(wx.StaticText(panel2, wx.ID_ANY, ""))
-        grid22.Add(self.outvpr_t, wx.ID_ANY, wx.EXPAND)
-        grid22.Add(self.outvpr_b, wx.ID_ANY, wx.ALIGN_RIGHT)
+        grid22.Add(self.outvpr_t, 0, wx.EXPAND)
+        grid22.Add(self.outvpr_b, 0, wx.ALIGN_RIGHT)
         grid22.AddGrowableCol(0)
 
         grid23.Add(outust_n)
         grid23.Add(wx.StaticText(panel2, wx.ID_ANY, ""))
-        grid23.Add(self.outust_t, wx.ID_ANY, wx.EXPAND)
-        grid23.Add(self.outust_b, wx.ID_ANY, wx.ALIGN_RIGHT)
+        grid23.Add(self.outust_t, 0, wx.EXPAND)
+        grid23.Add(self.outust_b, 0, wx.ALIGN_RIGHT)
         grid23.AddGrowableCol(0)
 
         box21.Add(grid21, 1, wx.EXPAND | wx.BOTTOM, 7)
@@ -325,7 +325,7 @@ class MainFrame(wx.Frame):
         self.com31.Bind(wx.EVT_COMBOBOX, self.OnChangeSelect)
 
         #Panel_3 layout
-        box31.Add(wx.StaticText(panel3, wx.ID_ANY, ""))
+        box31.Add(wx.StaticText(panel3, 0, ""))
         box31.Add(text31, flag=wx.CENTER | wx.ALIGN_TOP)
         box31.Add(self.text32, flag=wx.CENTER)
 
@@ -740,10 +740,10 @@ class SetFrame(wx.Frame):
 
     def OnSelectFiles(self, event):
        	text = self.text111.GetValue()
-        try:
+        if os.path.isdir(text) == True:
             path = os.path.dirname(text)
-        except TypeError:
-            path = os.path.dirname(os.path.abspath(__file__)) + "/Files"
+        else:
+            path = self.window.base + "/Files"
 
         dialog = wx.DirDialog(None, '開く', path, wx.DD_DEFAULT_STYLE | wx.DD_DIR_MUST_EXIST)  #atode
         dialog.ShowModal()
