@@ -1,0 +1,17 @@
+{
+    "version": "\u03b10.10",
+    "setting": {
+        "infile": "",
+        "outvpr": "",
+        "vprconv": true,
+        "ustconv": false,
+        "note": false,
+        "dir": false,
+        "dir_fix": "",
+        "dev": false,
+        "dev_hira": 0,
+        "dev_kata": 1,
+        "dev_other": 2,
+        "velocity": false
+    }
+}
