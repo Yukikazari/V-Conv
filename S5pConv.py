@@ -18,7 +18,6 @@ class VprConv():
         self.infile = window.infile
         self.outfile = window.outvpr
         self.s5pf = window.s5pf
-        self.s5pj = window.s5pj
         self.Conv()
 
     def Conv(self):
@@ -30,22 +29,14 @@ class VprConv():
         name = os.path.splitext(fname)[0]
 
         vprj["title"] = name #タイトル
-        vprj["masterTrack"]["tempo"]["global"]["value"] = int(self.s5pj["tempo"][0]["beatPerMinute"] * 100)
+        vprj["masterTrack"]["tempo"]["global"]["value"] = self.s5pf["tempo"][0]["value"]
         #最初のとこ
 
-        for i in range(len(self.s5pj["tempo"])):#テンポ
-            tmp = {}
-            tmp["pos"] = int(self.s5pj["tempo"][i]["position"] / 1470000)
-            tmp["value"] = int(self.s5pj["tempo"][i]["beatPerMinute"] * 100)
+        for i in range(len(self.s5pf["tempo"])):
+            vprj["masterTrack"]["tempo"]["events"].append(self.s5pf["tempo"][i])
 
-            vprj["masterTrack"]["tempo"]["events"].append(tmp)
-
-        for i in range(len(self.s5pj["meter"])):  #拍子
-            tmp = {}
-            tmp["bar"] = self.s5pj["meter"][i]["measure"]
-            tmp["numer"] = self.s5pj["meter"][i]["beatPerMeasure"]
-            tmp["denom"] = self.s5pj["meter"][i]["beatGranularity"]
-            vprj["masterTrack"]["timeSig"]["events"].append(tmp)
+        for i in range(len(self.s5pf["timeSig"])):
+            vprj["masterTrack"]["timeSig"]["events"].append(self.s5pf["timeSig"][i])
 
         for j in range(len(self.s5pf["tracks"])):
             vprj["tracks"].append(t_temp)
@@ -405,16 +396,17 @@ class MainFrame(wx.Frame):
 
     def ReadS5p(self):
         with open(self.infile, encoding='utf-8') as f:#s5p読み込み
-            self.s5pj = json.load(f)
+            ins5p = json.load(f)
 
-        self.s5pf = {"tracks": []}
+        self.s5pf = {"tracks": [], "timeSig": [], "tempo": []}
         
-        for j in range(len(self.s5pj["tracks"])):
+        for j in range(len(ins5p["tracks"])):
             self.s5pf["tracks"].append({"notes": [], "count":[], "blank":[]})     
-
-            for i in range(len(self.s5pj["tracks"][j]["notes"])):#歌詞
+            pos = 0
+            for i in range(len(ins5p["tracks"][j]["notes"])):
+                #notes
                 tmp = {"lyric": "", "lyric_hira":"", "phoneme": "", "pos": 0, "duration": 0, "number": 0, "velocity": 64}
-                lyric = self.s5pj["tracks"][j]["notes"][i]["lyric"]
+                lyric = ins5p["tracks"][j]["notes"][i]["lyric"]
                 try:
                     phone = self.pho["phonetic"][lyric]
                     ly_hira = self.pho["hira"][phone]
@@ -422,9 +414,9 @@ class MainFrame(wx.Frame):
                     ly_hira = "ら"
                 tmp["lyric"] = lyric
                 tmp["lyric_hira"] = ly_hira
-                tmp["pos"] = int(self.s5pj["tracks"][j]["notes"][i]["onset"] / 1470000)#空白忘れてた
-                tmp["duration"] = int(self.s5pj["tracks"][j]["notes"][i]["duration"] / 1470000)
-                tmp["number"] = int(self.s5pj["tracks"][j]["notes"][i]["pitch"])
+                tmp["pos"] = int(ins5p["tracks"][j]["notes"][i]["onset"] / 1470000)#空白忘れてた
+                tmp["duration"] = int(ins5p["tracks"][j]["notes"][i]["duration"] / 1470000)
+                tmp["number"] = int(ins5p["tracks"][j]["notes"][i]["pitch"])
                 
                 if self.setting["setting"]["dev"] == True:
                     if ly_hira in self.chardic["hira"]:
@@ -439,16 +431,31 @@ class MainFrame(wx.Frame):
 
                 self.s5pf["tracks"][j]["notes"].append(tmp)
 
-
-        for j in range(len(self.s5pf["tracks"])):
-            pos = 0            
-            for i in range(len(self.s5pf["tracks"][j]["notes"])):
+                #count,blank         
                 tmp = self.s5pf["tracks"][j]["notes"][i]["pos"]
                 if tmp - pos >= 200 :
                     self.s5pf["tracks"][j]["count"].append(i)
                     self.s5pf["tracks"][j]["blank"].append(tmp - pos)
                 pos = self.s5pf["tracks"][j]["notes"][i]["pos"] + self.s5pf["tracks"][j]["notes"][i]["duration"]
     
+            if self.s5pf["tracks"][j]["notes"][0]["pos"] < 200:
+                self.s5pf["tracks"][j]["count"].append(0)
+                self.s5pf["tracks"][j]["blank"].append(self.s5pf["tracks"][j]["notes"][0]["pos"])
+
+        for i in range(len(ins5p["meter"])):
+            tmp = {}
+            tmp["bar"] = ins5p["meter"][i]["measure"]
+            tmp["numer"] = ins5p["meter"][i]["beatPerMeasure"]
+            tmp["denom"] = ins5p["meter"][i]["beatGranularity"]
+            self.s5pf["timeSig"].append(tmp)
+
+        for i in range(len(ins5p["tempo"])):
+            tmp = {}
+            tmp["pos"] = int(ins5p["tempo"][i]["position"] / 1470000)
+            tmp["value"] = int(ins5p["tempo"][i]["beatPerMinute"] * 100)
+            self.s5pf["tempo"].append(tmp)
+
+
         self.element = []
         self.com31.Clear()
         for i in range(len(self.s5pf["tracks"])):
@@ -559,6 +566,7 @@ class MainFrame(wx.Frame):
 
             with open(backup, 'w') as f:
                 json.dump(self.s5pf, f)
+
         
         self.Destroy()
 
@@ -851,17 +859,17 @@ class NoteFrame(wx.Frame):
         self.box1 = wx.BoxSizer(wx.VERTICAL)
         
         txt = []
+        
         for j in range(len(self.window.s5pf["tracks"][self.track]["count"])):
             tmp = ''
             try:
                 t = self.window.s5pf["tracks"][self.track]["count"][j + 1]
             except:
                 t = len(self.window.s5pf["tracks"][self.track]["notes"])
+
             for i in range(self.window.s5pf["tracks"][self.track]["count"][j], t):
                 tmp = tmp + self.window.s5pf["tracks"][self.track]["notes"][i]["lyric_hira"]
-
             txt.append(tmp)
-
 
         self.text = []
         for i in range(len(txt)):
@@ -871,7 +879,6 @@ class NoteFrame(wx.Frame):
                 self.text[i].SetBackgroundColour("#d0d0d0")
         
             self.box1.Add(self.text[i], 0, wx.EXPAND)
-
         self.text[0].SetValue(True)
 
         self.panel1.SetSizer(self.box1)
