@@ -1,10 +1,10 @@
 {
-    "version": "\u03b10.10",
+    "version": "\u03b10.20",
     "setting": {
         "infile": "",
         "outvpr": "",
         "vprconv": true,
-        "ustconv": false,
+        "ccsconv": true,
         "note": false,
         "dir": false,
         "dir_fix": "",
