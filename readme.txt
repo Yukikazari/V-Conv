@@ -8,14 +8,21 @@ SynthesizerV保存ファイル(.s5p)を各種歌声合成ソフト対応ファ�
 GUIが軽いだけなのでCPUがある程度のスペックがあれば基本は通常版でいいかと思います
 ファイル変換以外使わないのであればどちらでも
 
+--バージョンアップについて--
+ver.α0.20より解凍時のフォルダ名が[V-Conv]に統一されるようにしました。
+旧[V-Conv]フォルダに解凍した同名フォルダを上書きしてsetup.exeを起動すれば設定等全て引き継がれます。
+setup.exeに無駄に管理者権限付いてますが名前の都合です。許して。
+アプリ名をhoge.exeとか適当に変えれば権限外れます。
+
 --開発環境--
 Windows10 pro 64bit
-Visual Studio Code 1.39.2
+Visual Studio Code ver.1.39.2
 Python 3.7.5 64bit
 
---動作環境--
+--動作確認環境--
 WindowsOS
-KotonoSync2.3.8以降(vprファイル)
+KotonoSync ver.2.3.8(vprファイル)
+CeVIO Creative Studio6 ver.6.1.55.1(ccsファイル)
 
 --使い方--
 1. アプリを起動し、変換元ファイルのボタン、またはドラッグアンドドロップでファイルを選択する
