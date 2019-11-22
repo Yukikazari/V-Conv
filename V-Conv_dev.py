@@ -1,4 +1,5 @@
 import os
+import re
 import sys
 import json
 import shutil
@@ -6,12 +7,12 @@ import codecs
 import wx
 import wx.lib.scrolledpanel as scrolled
 import copy
-import time
 import glob
+import xml.etree.ElementTree as ET
+import xml.dom.minidom as md
 
 #https://github.com/Yukikazari/V-Conv.git
 
-#めも　あとでファイルの時間ソートと表示と選択時処理を入れる。入れて。
 
 class VprConv():
     def __init__(self, window):
@@ -39,9 +40,11 @@ class VprConv():
             vprj["masterTrack"]["timeSig"]["events"].append(self.s5pf["timeSig"][i])
 
         for j in range(len(self.s5pf["tracks"])):
-            vprj["tracks"].append(t_temp)
+            tt_temp = copy.deepcopy(t_temp)
+            vprj["tracks"].append(tt_temp)
             st = int(self.s5pf["tracks"][j]["notes"][0]["pos"])
             vprj["tracks"][j]["parts"][0]["pos"] = st
+
 
             dur = 0
             for i in range(len(self.s5pf["tracks"][j]["notes"])):#歌詞
@@ -73,6 +76,113 @@ class VprConv():
         shutil.rmtree("./Project/Project")
 
 
+class CcsConv():
+    def __init__(self, window):
+        self.infile = window.infile
+        self.outfile = window.outccs
+        self.s5pf = window.s5pf
+        self.Conv()
+
+    def Conv(self):
+        Scenario = ET.Element("Scenario")
+        Scenario.set('Code', "7251BC4B6168E7B2992FA620BD3E1E77")
+        Generation = ET.SubElement(Scenario, 'Generation')
+        Author = ET.SubElement(Generation, 'Author', {'Version':'6.1.55.1'})
+        TTS = ET.SubElement(Generation, 'TTS', {'Version': '4.0.3'})
+        Dictionary = ET.SubElement(TTS, 'Dictionary', {'Version': '2.0.2'})
+        SoundSources = ET.SubElement(TTS, 'SoundSources')
+        SoundSource = ET.SubElement(SoundSources, 'SoundSource', {'Version': '1.7.3', 'Id': 'A', 'Name': 'さとうささら'})
+        SoundSource = ET.SubElement(SoundSources, 'SoundSource', {'Version': '1.5.0', 'Id': 'B', 'Name': 'すずきつづみ'})
+        SoundSource = ET.SubElement(SoundSources, 'SoundSource', {'Version': '1.7.0', 'Id': 'C', 'Name': 'タカハシ'})
+        SVSS = ET.SubElement(Generation, 'SVSS', {'Version': '4.4.11'})
+        Dictionary = ET.SubElement(SVSS, 'Dictionary', {'Version': '1.1.0'})
+        SoundSources = ET.SubElement(SVSS, 'SoundSources')
+        SoundSource = ET.SubElement(SoundSources, 'SoundSource', {'Version': '1.6.0', 'Id': 'A', 'Name': 'さとうささら'})
+        Sequence = ET.SubElement(Scenario, 'Sequence', {'Id':''})
+        Scene = ET.SubElement(Sequence, 'Scene', {'Id': ''})
+        TimeLine = ET.SubElement(Scene, 'TimeLine', {'Partition': '200,178', 'CurrentPosition':'00:00:00'})
+        ViewScale = ET.SubElement(TimeLine, 'ViewScale', {'Horizontal': '1', 'Vertical':'0.64583333333333337'})
+        TalkEditor = ET.SubElement(Scene, 'TalkEditor', {'Partition': '542'})
+        Extension = ET.SubElement(TalkEditor, 'Extension', {'VerticalRatio': '*,*'})
+        SongEditor = ET.SubElement(Scene, 'SongEditor', {'Partition': '64', 'Quantize':'240', 'Mode':'0', 'EditingTool':'1'})
+        ViewScale = ET.SubElement(SongEditor, 'ViewScale', {'Horizontal': '16', 'Vertical':'12'})
+        ReferenceState = ET.SubElement(SongEditor, 'ReferenceState', {'Current': 'None', 'Previous':'None'})
+
+        Units = ET.SubElement(Scene, 'Units')
+        Groups = ET.SubElement(Scene, 'Groups', {'ActiveGroup': '7de5f694-4b60-493d-b6b0-000000000000'})
+        SoundSetting = ET.SubElement(Scene, 'SoundSetting', {'Tempo': '120', 'MasterVolume': '0', 'Rhythm':'4/4'})
+
+        tmp = int(1920 * int(self.s5pf["timeSig"][0]["numer"]) / int(self.s5pf["timeSig"][0]["denom"]))
+        delay = 0
+        for i in range(len(self.s5pf["tracks"])):
+            if int(self.s5pf["tracks"][i]["notes"][0]["pos"]) < tmp:
+                delay = int(tmp * 2)
+                break
+            else:
+                pass
+
+
+        for j in range(len(self.s5pf["tracks"])):
+            grp = '7de5f694-4b60-493d-b6b0-00000000' + str('%04d' % j)
+            Group = ET.SubElement(Groups, 'Group', {'Version':'1.0', 'Id':grp, 'Category':'SingerSong', 'Name':self.s5pf["tracks"][j]["name"], 'Color':'#FFAF1F14', 'Volume':'0', 'Pan':'0', 'IsSolo':'false', 'IsMuted':'false', 'CastId':'A', 'Language':'Japanese'})
+
+            Unit = ET.SubElement(Units, 'Unit', {'Version': '1.0', 'Id': '', 'Category':'SingerSong', 'Group':grp, 'StartTime':'00:00:00', 'Duration':'00:00:00', 'CastId':'A', 'Language':'Japanese'})
+            Song = ET.SubElement(Unit, 'Song', {'Version':'1.03'})
+            Tempo = ET.SubElement(Song, 'Tempo')
+
+            for i in range(len(self.s5pf["tempo"])):
+                Sound = ET.SubElement(Tempo, 'Sound')
+
+                if i == 0:
+                    Sound.set('Clock', str(int(self.s5pf["tempo"][i]["pos"] * 2)))
+                else:
+                    Sound.set('Clock', str(int(self.s5pf["tempo"][i]["pos"] * 2 + delay)))
+
+                Sound.set('Tempo', str(int(self.s5pf["tempo"][i]["value"] / 100)))
+
+            Beat = ET.SubElement(Song, 'Beat')
+
+            tmp = 0
+            for i in range(len(self.s5pf["timeSig"])):
+                Time = ET.SubElement(Beat, 'Time')
+
+                beats = int(self.s5pf["timeSig"][i]["numer"])
+                beattype = int(self.s5pf["timeSig"][i]["denom"])
+
+                clk = 1920 * beats / beattype * (self.s5pf["timeSig"][i]["bar"] - tmp)
+                tmp = self.s5pf["timeSig"][i]["bar"]
+
+                if i == 0:
+                    Time.set('Clock', str(int(clk * 2)))
+                else:
+                    Time.set('Clock', str(int(clk * 2 + delay)))
+
+                Time.set('Beats', str(beats))
+                Time.set('BeatType', str(beattype))
+
+            Score = ET.SubElement(Song, 'Score')
+            Key = ET.SubElement(Score, 'Key', {'Clock': '0', 'Fifths': '0', 'Mode': '0'})
+            Dynamics = ET.SubElement(Score, 'Dynamics', {'Clock': '0', 'Value': '5'})
+
+            for i in range(len(self.s5pf["tracks"][j]["notes"])):
+                Note = ET.SubElement(Score, 'Note')
+                tmp = int(self.s5pf["tracks"][j]["notes"][i]["number"])
+                step = int(tmp % 12)
+                octabe = int(tmp / 12 - 1)
+
+                Note.set('Clock', str(int(self.s5pf["tracks"][j]["notes"][i]["pos"] * 2 + delay)))
+                Note.set('PitchStep', str(step))
+                Note.set('PitchOctave', str(octabe))
+                Note.set('Duration', str(int(self.s5pf["tracks"][j]["notes"][i]["duration"] * 2)))
+                Note.set('Lyric', str(self.s5pf["tracks"][j]["notes"][i]["lyric_hira"]))
+
+
+        document = md.parseString(ET.tostring(Scenario, 'utf-8'))
+        with open(self.outfile, mode='w', encoding='utf-8') as f:
+            document.writexml(f, encoding='utf-8', newl='\n', indent='', addindent='  ')
+
+
+
 class FileDrop(wx.FileDropTarget):
     def __init__(self, window):
         wx.FileDropTarget.__init__(self)
@@ -85,11 +195,14 @@ class FileDrop(wx.FileDropTarget):
             self.window.infile = infile
             self.window.infile_t.SetLabel(infile)
             if self.window.setting["setting"]["dir"] == True:
-                self.window.outvpr = self.window.setting["setting"]["dir_fix"] + "/" + os.path.splitext(infile_name)[0] + '.vpr'           
+                self.window.outvpr = self.window.setting["setting"]["dir_fix"] + "\\" + os.path.splitext(infile_name)[0] + '.vpr'           
+                self.window.outccs = self.window.setting["setting"]["dir_fix"] + "\\" + os.path.splitext(infile_name)[0] + '.ccs'
             else:
                 self.window.outvpr = os.path.splitext(infile)[0] + '.vpr'
+                self.window.outccs = os.path.splitext(infile)[0] + '.ccs'
                              
             self.window.outvpr_t.SetLabel(self.window.outvpr)
+            self.window.outccs_t.SetLabel(self.window.outccs)
             self.window.ReadS5p()
         return 0
 
@@ -101,6 +214,8 @@ class FileSelect():
             self.S5p()
         elif SetId == 212:
             self.Vpr()
+        elif SetId == 222:
+            self.Ccs()
         else:
             pass
 
@@ -116,11 +231,14 @@ class FileSelect():
             infile_name = os.path.basename(infile)
             self.window.infile_t.SetLabel(infile)
             if self.window.setting["setting"]["dir"] == True:
-                self.window.outvpr = self.window.setting["setting"]["dir_fix"] + "/" + os.path.splitext(infile_name)[0] + '.vpr'           
+                self.window.outvpr = self.window.setting["setting"]["dir_fix"] + "\\" + os.path.splitext(infile_name)[0] + '.vpr'           
+                self.window.outccs = self.window.setting["setting"]["dir_fix"] + "\\" + os.path.splitext(infile_name)[0] + '.ccs'
             else:
                 self.window.outvpr = os.path.splitext(infile)[0] + '.vpr'
+                self.window.outccs = os.path.splitext(infile)[0] + '.ccs'
                              
             self.window.outvpr_t.SetLabel(self.window.outvpr)
+            self.window.outccs_t.SetLabel(self.window.outccs)
             self.window.ReadS5p()
 
     def Vpr(self):
@@ -139,6 +257,21 @@ class FileSelect():
             self.window.outvpr = outfile
             self.window.outvpr_t.SetLabel(outfile)
 
+    def Ccs(self):
+        if self.window.infile == '':
+            first_path = os.path.dirname(self.window.setting['setting']['infile'])
+            first_file = ''
+        else:
+            first_path = os.path.dirname(self.window.outccs)
+            first_file = os.path.basename(self.window.outccs)
+
+        filter = "CevioCS file(*.ccs) | *.ccs"
+        dialog = wx.FileDialog(None, '保存', first_path, first_file, filter, style=wx.FD_SAVE)  #atode
+        dialog.ShowModal()
+        if not dialog.GetPath() == '':
+            outfile = dialog.GetPath()
+            self.window.outccs = outfile
+            self.window.outccs_t.SetLabel(outfile)
 
 class MainFrame(wx.Frame):
     def __init__(self):
@@ -147,6 +280,7 @@ class MainFrame(wx.Frame):
         self.note_now = 0
         self.infile = ''
         self.outvpr = ''
+        self.outccs = ''
         self.select = 0
 
         #Font
@@ -166,7 +300,11 @@ class MainFrame(wx.Frame):
         menu_file.Append(1000, '開く')
 
         menu_file_sub = wx.Menu()
-        for i in range(len(self.vconvfiles)):
+        if len(self.vconvfiles) <= 10:
+            backup_count = len(self.vconvfiles)
+        else:
+            backup_count = 10
+        for i in range(backup_count):
             menu_file_sub.Append(i, self.vconvfiles[i])
         menu_file.AppendSubMenu(menu_file_sub, '履歴')
 
@@ -182,24 +320,22 @@ class MainFrame(wx.Frame):
 
         #Panel_1 object
         self.vpr_c = wx.CheckBox(panel1, 101, 'vpr (VOCALOID5)')
-        self.ust_c = wx.CheckBox(panel1, 102, 'ust (UTAU)')
+        self.ccs_c = wx.CheckBox(panel1, 102, 'ccs (CeVIO)')
 
         #Panel_1 setting
         box1_name.SetFont(font_j10)
 
         self.vpr_c.SetFont(font_e12)
-        self.vpr_c.Disable()
         
-        self.ust_c.SetFont(font_e12)
-        self.ust_c.Disable()
+        self.ccs_c.SetFont(font_e12)
 
         #Panel_1 event
         self.vpr_c.Bind(wx.EVT_CHECKBOX, self.OnSelectConv)
-        self.ust_c.Bind(wx.EVT_CHECKBOX, self.OnSelectConv)
+        self.ccs_c.Bind(wx.EVT_CHECKBOX, self.OnSelectConv)
 
         #Panel_1 layout
         box1.Add(self.vpr_c, 1, wx.TOP, 10)
-        box1.Add(self.ust_c, 1,)
+        box1.Add(self.ccs_c, 1,)
         box1.Add(wx.StaticText(panel1, wx.ID_ANY, ""))
         panel1.SetSizer(box1)
 
@@ -228,9 +364,9 @@ class MainFrame(wx.Frame):
         self.outvpr_b = wx.Button(panel2, 212, "…", size=(30, -1))
         outvpr_n = wx.StaticText(panel2, wx.ID_ANY, "    vprファイル")
 
-        self.outust_t = wx.TextCtrl(panel2, 221, "工事中")
-        self.outust_b = wx.Button(panel2, 222, "…", size=(30, -1))
-        outust_n = wx.StaticText(panel2, wx.ID_ANY, "    ustファイル")
+        self.outccs_t = wx.TextCtrl(panel2, 221, self.outccs)
+        self.outccs_b = wx.Button(panel2, 222, "…", size=(30, -1))
+        outust_n = wx.StaticText(panel2, wx.ID_ANY, "    ccsファイル")
 
         #Panel_2 setting
         box21_name.SetFont(font_j10)
@@ -241,13 +377,13 @@ class MainFrame(wx.Frame):
         self.outvpr_t.SetFont(font_j10)
         outvpr_n.SetFont(font_j10)
 
-        self.outust_t.SetFont(font_e10)    
+        self.outccs_t.SetFont(font_j10)    
         outust_n.SetFont(font_j10)
 
         #Panel_2 event
         infile_b.Bind(wx.EVT_BUTTON, self.OnSelectFiles)
         self.outvpr_b.Bind(wx.EVT_BUTTON, self.OnSelectFiles)
-        self.outust_b.Bind(wx.EVT_BUTTON, self.OnSelectFiles)
+        self.outccs_b.Bind(wx.EVT_BUTTON, self.OnSelectFiles)
 
         #Panel_2 layout
         grid21.Add(self.infile_t, 0, wx.EXPAND | wx.TOP | wx.BOTTOM, 5)
@@ -262,8 +398,8 @@ class MainFrame(wx.Frame):
 
         grid23.Add(outust_n)
         grid23.Add(wx.StaticText(panel2, wx.ID_ANY, ""))
-        grid23.Add(self.outust_t, 0, wx.EXPAND)
-        grid23.Add(self.outust_b, 0, wx.ALIGN_RIGHT)
+        grid23.Add(self.outccs_t, 0, wx.EXPAND)
+        grid23.Add(self.outccs_b, 0, wx.ALIGN_RIGHT)
         grid23.AddGrowableCol(0)
 
         box21.Add(grid21, 1, wx.EXPAND | wx.BOTTOM, 7)
@@ -380,10 +516,15 @@ class MainFrame(wx.Frame):
             tmp = os.path.splitext(tmp)[0]
             self.vconvfiles.append(tmp)
 
+        ver = r'α0.2(\d*)'
+        if not re.search(ver, self.setting["version"]):
+            wx.MessageBox("setup.exeを実行してください")
+            self.Destroy()
+
     def SetValues(self):
         #Panel_1
         self.vpr_c.SetValue(self.setting["setting"]["vprconv"])
-        self.ust_c.SetValue(self.setting["setting"]["ustconv"])
+        self.ccs_c.SetValue(self.setting["setting"]["ccsconv"])
         self.OnSelectConv('')
 
 
@@ -401,7 +542,8 @@ class MainFrame(wx.Frame):
         self.s5pf = {"tracks": [], "timeSig": [], "tempo": []}
         
         for j in range(len(ins5p["tracks"])):
-            self.s5pf["tracks"].append({"notes": [], "count":[], "blank":[]})     
+            self.s5pf["tracks"].append({"notes": [], "count": [], "blank": [], "name": ''})
+            self.s5pf["tracks"][j]["name"] = ins5p["tracks"][j]["name"]
             pos = 0
             for i in range(len(ins5p["tracks"][j]["notes"])):
                 #notes
@@ -508,12 +650,12 @@ class MainFrame(wx.Frame):
             self.outvpr_t.Disable()
             self.outvpr_b.Disable()
 
-        if self.ust_c.GetValue() == True:
-            self.outust_t.Enable()
-            self.outust_b.Enable()
+        if self.ccs_c.GetValue() == True:
+            self.outccs_t.Enable()
+            self.outccs_b.Enable()
         else:
-            self.outust_t.Disable()
-            self.outust_b.Disable()
+            self.outccs_t.Disable()
+            self.outccs_b.Disable()
 
     def OnConversion(self, event):
         self.outvpr = self.outvpr_t.GetValue()
@@ -531,10 +673,19 @@ class MainFrame(wx.Frame):
                 outfiles += os.path.basename(self.outvpr) + '\n'
 
 
-        if self.ust_c.GetValue() == True:
-            #UstConv(self)
-            outfiles += os.path.basename(self.outust) + '\n'
-            pass
+        if self.ccs_c.GetValue() == True:
+            if os.path.isfile(self.outccs) == True:
+                dlg = wx.MessageDialog(None, os.path.basename(self.outccs) + "は既に存在します。上書きしますか？", "上書き確認", wx.YES_NO | wx.ICON_INFORMATION)
+                res = dlg.ShowModal()
+                dlg.Destroy()
+                if res == wx.ID_YES:
+                    CcsConv(self)
+                    outfiles += os.path.basename(self.outccs) + '\n'
+            else:
+                CcsConv(self)
+                outfiles += os.path.basename(self.outccs) + '\n'
+
+
         if not outfiles == '':
             FinishDialog(outfiles)
 
@@ -555,6 +706,8 @@ class MainFrame(wx.Frame):
 
 
     def AppClose(self, event):
+        self.setting["setting"]["vprconv"] = self.vpr_c.GetValue()
+        self.setting["setting"]["ccsconv"] = self.ccs_c.GetValue()
         with open('./setting.json', "w") as f:
             json.dump(self.setting, f, indent=4)
 
