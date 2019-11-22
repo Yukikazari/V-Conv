@@ -37,9 +37,11 @@ class VprConv():
             vprj["masterTrack"]["timeSig"]["events"].append(self.s5pf["timeSig"][i])
 
         for j in range(len(self.s5pf["tracks"])):
-            vprj["tracks"].append(t_temp)
+            tt_temp = copy.deepcopy(t_temp)
+            vprj["tracks"].append(tt_temp)
             st = int(self.s5pf["tracks"][j]["notes"][0]["pos"])
             vprj["tracks"][j]["parts"][0]["pos"] = st
+
 
             dur = 0
             for i in range(len(self.s5pf["tracks"][j]["notes"])):#歌詞
